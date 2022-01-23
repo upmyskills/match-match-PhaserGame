@@ -72,6 +72,14 @@ class MainScene extends Phaser.Scene {
     // const c = new Card({ scene: this, x: 0, y: 0, key: this.cardBack, scale: this.cardScale });
   }
 
+  update() {
+    this.cardsList.forEach((card) => {
+      const angle = card.angle + (card.getDirection() ? card.getStep() : -card.getStep());
+      card.setAngle(angle);
+      if (card.angle >= 3 || card.angle <= -3) card.changeDirection();
+    });
+  }
+
   private flip(_pointer: Phaser.Input.Pointer, obj: Card) {
     if (obj.isNotFlipped() && !this.blocked) {
       obj.flipCard();
@@ -89,19 +97,29 @@ class MainScene extends Phaser.Scene {
     this.blocked = true;
     const [firstCard, secondCard] = this.activeCards;
     const isSame = firstCard.compareWith(secondCard);
+    const time = isSame ? 40 : 500;
     const timeout = setTimeout(() => {
-      this.blocked = false;
-      if (!isSame) this.activeCards.forEach((card) => card.closeCard());
-      this.activeCards = [];
+      if (isSame) {
+        this.activeCards.forEach((card) => card.setTint(0x00ff00).setAlpha(0.6));
+      } else {
+        this.activeCards.forEach((card) => {
+          card.closeCard();
+        });
+      }
+
       clearTimeout(timeout);
-    }, 1000);
+      this.activeCards = [];
+      this.blocked = false;
+    }, time);
   }
 
   private createCards(variants: Array<string>) {
     const totalCard = this.currentDifficulty.rows * this.currentDifficulty.colls;
+    const cardInst = { scene: this, x: 0, y: 0, texture: this.cardBack, scale: this.cardScale, secret: '' };
     for (let i = 0; i < totalCard / 2; i += 1) {
       for (let j = 0; j < 2; j += 1) {
-        const card = new Card({ scene: this, x: 0, y: 0, texture: this.cardBack, scale: this.cardScale, secret: variants[i] });
+        cardInst.secret = variants[i];
+        const card = new Card(cardInst);
         this.cardsList = [...this.cardsList, card];
       }
     }
@@ -113,7 +131,7 @@ class MainScene extends Phaser.Scene {
     this.eraseCards();
     for (let col = 0; col < difficulty.colls; col += 1) {
       for (let row = 0; row < difficulty.rows; row += 1) {
-        const cardSpacing = 10;
+        const cardSpacing = 20;
         const cardTexture = this.textures.get(this.cardBack);
         const textureWidth = cardTexture.getSourceImage().width;
         const textureHeight = cardTexture.getSourceImage().height;
@@ -122,8 +140,8 @@ class MainScene extends Phaser.Scene {
         const offsetY = (Number(this.sys.game.config.height) - difficulty.rows * ((textureHeight + cardSpacing) * this.cardScale)) / 2;
 
         const position: ICardsPositions = {
-          posX: col * ((textureWidth + cardSpacing) * this.cardScale) + offsetX,
-          posY: row * ((textureHeight + cardSpacing) * this.cardScale) + offsetY,
+          posX: col * ((textureWidth + cardSpacing) * this.cardScale) + offsetX + (textureWidth * this.cardScale) / 2,
+          posY: row * ((textureHeight + cardSpacing) * this.cardScale) + offsetY + (textureHeight * this.cardScale) / 2,
         };
 
         this.cardsPositions = [...this.cardsPositions, position];

@@ -11,17 +11,21 @@ class Card extends Phaser.GameObjects.Sprite {
   private secretValue: string;
   private isFlipped = false;
   private cardBack: string;
+  private direction: boolean;
+  private step = 0.03;
 
   constructor(cardObj: ICustomSprite) {
     super(cardObj.scene, cardObj.x, cardObj.y, cardObj.texture);
     cardObj.scene.add.existing(this);
-    this.setOrigin(0, 0);
+    // this.setOrigin(0, 0);
     this.setScale(cardObj.scale);
-    this.setInteractive();
     this.secretValue = cardObj.secret;
 
     // this.on('pointerdown', this.flipCard, this);        /*  like as Eventlistener  */
     this.cardBack = cardObj.texture as string;
+    this.direction = Math.random() * 10 - 5 > 0;
+    this.setAngle(Math.random() * 3);
+    this.setInteractive();
   }
 
   public flipCard() {
@@ -40,6 +44,22 @@ class Card extends Phaser.GameObjects.Sprite {
 
   public getSecret() {
     return this.secretValue;
+  }
+
+  public getDirection() {
+    return this.direction;
+  }
+
+  public getStep() {
+    return this.step;
+  }
+
+  public changeDirection() {
+    this.direction = !this.direction;
+  }
+
+  public setStep(step: number) {
+    this.step = step;
   }
 
   public compareWith(card: Card) {
