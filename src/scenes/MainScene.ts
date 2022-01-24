@@ -70,7 +70,7 @@ class MainScene extends Phaser.Scene {
     this.createCards(this.variants);
 
     this.input.on('gameobjectdown', this.flip, this);
-    this.incorrectAttemptsMessage = this.add.text(0, 0, `Incorrect: ${this.wrongAttempts}`).setColor('#ff0000');
+    this.incorrectAttemptsMessage = this.add.text(0, 0, `Incorrect: ${this.wrongAttempts}`);
     // const c = new Card({ scene: this, x: 0, y: 0, key: this.cardBack, scale: this.cardScale });
   }
 
@@ -83,6 +83,8 @@ class MainScene extends Phaser.Scene {
   }
 
   private flip(_pointer: Phaser.Input.Pointer, obj: Card) {
+    const isNotCardInstance = !(obj instanceof Card);
+    if (isNotCardInstance) return;
     if (obj.isNotFlipped() && !this.blocked) {
       obj.flipCard();
       this.activeCards = [...this.activeCards, obj];
@@ -99,24 +101,30 @@ class MainScene extends Phaser.Scene {
     this.blocked = true;
     const [firstCard, secondCard] = this.activeCards;
     const isSimilar = firstCard.compareWith(secondCard);
-    const blockTime = isSimilar ? 300 : 1000;
+    const blockTime = isSimilar ? 400 : 600;
     const timeout = setTimeout(() => {
       if (isSimilar) {
         this.activeCards.forEach((card) => {
           card.setTint(0x00ff00).setAlpha(0.6);
           card.guessed();
+          this.blocked = false;
         });
       } else {
         this.wrongAttempts += 1;
         this.incorrectAttemptsMessage?.setText(`Incorrect: ${this.wrongAttempts}`);
         this.activeCards.forEach((card) => {
-          card.closeCard();
+          card.setTint(0xff0000).setAlpha(0.6);
+          const ttt = setTimeout(() => {
+            card.closeCard();
+            card.setTint().setAlpha(1);
+            this.blocked = false;
+            clearTimeout(ttt);
+          }, 400);
         });
       }
 
       clearTimeout(timeout);
       this.activeCards = [];
-      this.blocked = false;
       this.checkGameStatus();
     }, blockTime);
   }
