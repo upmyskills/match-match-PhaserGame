@@ -104,7 +104,7 @@ class MainScene extends Phaser.Scene {
     this.setCardPositions(this.currentDifficulty);
     this.createCards(this.variants);
     this.createTimer();
-    this.sounds?.themeSound.play();
+    this.sounds?.themeSound.play({ loop: true });
   }
 
   private endGame() {

@@ -28,10 +28,10 @@ module.exports = {
       },
       {
         test: /\.(?:mp3)$/i,
-        // type: 'asset/resource',
-        use: [
-          { loader: 'file-loader'}
-        ],
+        loader: 'file-loader',
+        options: {
+          name: './assets/sounds/[contenthash].[ext]',
+        }
       },
       {
         test: /\.(?:woff(2)?|eot|ttf|otf|svg)$/i,
