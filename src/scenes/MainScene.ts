@@ -3,6 +3,9 @@ import bgImage from '../assets/sprites/backgrounds/background.png';
 import cardbackImage from '../assets/sprites/cardback/back1.png';
 import cardTapSound from '../assets/sounds/card.mp3';
 import themeSound from '../assets/sounds/theme.mp3';
+import successSound from '../assets/sounds/success.mp3';
+import completeSound from '../assets/sounds/complete.mp3';
+import timeisoverSound from '../assets/sounds/timeout.mp3';
 
 interface ICardsPositions {
   posX: number;
@@ -13,6 +16,14 @@ interface IDifficulty {
   name: string;
   rows: number;
   colls: number;
+}
+
+interface ISounds {
+  cardTap: Phaser.Sound.BaseSound;
+  themeSound: Phaser.Sound.BaseSound;
+  success: Phaser.Sound.BaseSound;
+  complete: Phaser.Sound.BaseSound;
+  timeisover: Phaser.Sound.BaseSound;
 }
 
 class MainScene extends Phaser.Scene {
@@ -30,7 +41,7 @@ class MainScene extends Phaser.Scene {
   gameTime = 30;
   elapsedTime = 0;
   elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
-  sounds: { cardTap: Phaser.Sound.BaseSound; themeSound: Phaser.Sound.BaseSound } | undefined;
+  sounds: ISounds | undefined;
 
   constructor() {
     super('MainScene');
@@ -64,6 +75,9 @@ class MainScene extends Phaser.Scene {
 
     this.load.audio('cardTapSound', cardTapSound);
     this.load.audio('themeSound', themeSound);
+    this.load.audio('timeisoverSound', timeisoverSound);
+    this.load.audio('successSound', successSound);
+    this.load.audio('completeSound', completeSound);
   }
 
   create() {
@@ -80,8 +94,9 @@ class MainScene extends Phaser.Scene {
     this.incorrectAttemptsMessage = this.add.text(0, 0, `Incorrect: ${this.wrongAttempts}`, { color: '#000' });
     this.elapsedTimeMessage = this.add.text(500, 0, `Time: ${this.gameTime - this.elapsedTime}`, {
       color: '#000',
+      fontFamily: 'CevicheOne-Regular',
+      fontSize: '48px',
       fontStyle: 'bold',
-      fontSize: '32px',
     });
   }
 
@@ -96,7 +111,10 @@ class MainScene extends Phaser.Scene {
   private initSounds() {
     this.sounds = {
       cardTap: this.sound.add('cardTapSound', { volume: 0.05 }),
-      themeSound: this.sound.add('themeSound', { volume: 0.15 }),
+      themeSound: this.sound.add('themeSound', { volume: 0.1 }),
+      complete: this.sound.add('completeSound'),
+      timeisover: this.sound.add('timeisoverSound'),
+      success: this.sound.add('successSound'),
     };
   }
 
@@ -108,12 +126,22 @@ class MainScene extends Phaser.Scene {
   }
 
   private endGame() {
+    const isGc = this.cardsList.length === this.cardsList.filter((card) => card.getGuessStatus()).length;
     const tmpl = `
       My war is over!!!\n
       Wrong attempts: ${this.wrongAttempts}!\n
-      ${this.cardsList.length === this.cardsList.filter((card) => card.getGuessStatus()).length ? 'Congratulation!' : 'GAME OVER!'}
+      ${isGc ? 'Congratulation!' : 'GAME OVER!'}
     `;
-    this.add.text(300, 300, tmpl, { color: '#000000', fontFamily: 'Comic Sans', fontSize: '48px', align: 'center' }).setOrigin(0.5, 0.5);
+
+    if (isGc) {
+      this.sounds?.complete.play();
+    } else {
+      this.sounds?.timeisover.play();
+    }
+
+    this.time.removeAllEvents();
+
+    this.add.text(300, 300, tmpl, { color: '#000000', fontFamily: 'Arial', fontSize: '48px', align: 'center' }).setOrigin(0.5, 0.5);
   }
 
   private createTimer() {
@@ -161,6 +189,7 @@ class MainScene extends Phaser.Scene {
       delay: blockTime,
       callback: () => {
         if (isSimilar) {
+          this.sounds?.success.play();
           this.activeCards.forEach((card) => {
             card.setTint(0x00ff00).setAlpha(0.6);
             card.guessed();
@@ -194,9 +223,8 @@ class MainScene extends Phaser.Scene {
     const isAllGuessed = this.cardsList.length === guessedCards.length;
 
     if (isAllGuessed) {
+      this.endGame();
       this.clearGame();
-      this.setCardPositions(this.currentDifficulty);
-      this.createCards(this.variants);
     }
   }
 
