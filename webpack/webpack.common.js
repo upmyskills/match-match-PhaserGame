@@ -27,6 +27,13 @@ module.exports = {
         type: 'asset/resource'
       },
       {
+        test: /\.(?:mp3)$/i,
+        // type: 'asset/resource',
+        use: [
+          { loader: 'file-loader'}
+        ],
+      },
+      {
         test: /\.(?:woff(2)?|eot|ttf|otf|svg)$/i,
         type: 'asset/inline'
       },

@@ -1,6 +1,8 @@
 import { Card } from '../sprites/Card';
 import bgImage from '../assets/sprites/backgrounds/background.png';
 import cardbackImage from '../assets/sprites/cardback/back1.png';
+import cardTapSound from '../assets/sounds/card.mp3';
+import themeSound from '../assets/sounds/theme.mp3';
 
 interface ICardsPositions {
   posX: number;
@@ -25,6 +27,10 @@ class MainScene extends Phaser.Scene {
   wrongAttempts = 0;
   incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
   variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
+  gameTime = 30;
+  elapsedTime = 0;
+  elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
+  sounds: { cardTap: Phaser.Sound.BaseSound; themeSound: Phaser.Sound.BaseSound } | undefined;
 
   constructor() {
     super('MainScene');
@@ -48,13 +54,16 @@ class MainScene extends Phaser.Scene {
         colls: 6,
       },
     ];
-    [this.currentDifficulty] = this.difficulties.slice(2);
+    [this.currentDifficulty] = this.difficulties;
   }
 
   preload() {
     this.load.image('bgImage', bgImage);
     this.load.image(this.cardBack, cardbackImage);
     this.preloadCardVariants();
+
+    this.load.audio('cardTapSound', cardTapSound);
+    this.load.audio('themeSound', themeSound);
   }
 
   create() {
@@ -64,28 +73,73 @@ class MainScene extends Phaser.Scene {
     };
 
     this.add.sprite(canvasCenterPoint.x, canvasCenterPoint.y, 'bgImage');
-
-    this.setCardPositions(this.currentDifficulty);
-    // this.createCards();
-    this.createCards(this.variants);
+    this.initSounds();
+    this.initGame();
 
     this.input.on('gameobjectdown', this.flip, this);
     this.incorrectAttemptsMessage = this.add.text(0, 0, `Incorrect: ${this.wrongAttempts}`, { color: '#000' });
-    // const c = new Card({ scene: this, x: 0, y: 0, key: this.cardBack, scale: this.cardScale });
+    this.elapsedTimeMessage = this.add.text(500, 0, `Time: ${this.gameTime - this.elapsedTime}`, {
+      color: '#000',
+      fontStyle: 'bold',
+      fontSize: '32px',
+    });
   }
 
   update() {
     this.cardsList.forEach((card) => {
-      const angle = card.angle + (card.getDirection() ? card.getStep() : -card.getStep());
+      const angle = card.angle + card.getStep();
       card.setAngle(angle);
       if (card.angle >= 3 || card.angle <= -3) card.changeDirection();
     });
+  }
+
+  private initSounds() {
+    this.sounds = {
+      cardTap: this.sound.add('cardTapSound', { volume: 0.05 }),
+      themeSound: this.sound.add('themeSound', { volume: 0.15 }),
+    };
+  }
+
+  private initGame() {
+    this.setCardPositions(this.currentDifficulty);
+    this.createCards(this.variants);
+    this.createTimer();
+    this.sounds?.themeSound.play();
+  }
+
+  private endGame() {
+    const tmpl = `
+      My war is over!!!\n
+      Wrong attempts: ${this.wrongAttempts}!\n
+      ${this.cardsList.length === this.cardsList.filter((card) => card.getGuessStatus()).length ? 'Congratulation!' : 'GAME OVER!'}
+    `;
+    this.add.text(300, 300, tmpl, { color: '#000000', fontFamily: 'Comic Sans', fontSize: '48px', align: 'center' }).setOrigin(0.5, 0.5);
+  }
+
+  private createTimer() {
+    this.time.addEvent({
+      delay: 1000,
+      callback: this.onTick,
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  private onTick() {
+    if (this.elapsedTime > this.gameTime) {
+      this.endGame();
+      this.time.removeAllEvents();
+      this.clearGame();
+    }
+    this.elapsedTimeMessage?.setText(`Time: ${this.gameTime - this.elapsedTime}`);
+    this.elapsedTime += 1;
   }
 
   private flip(_pointer: Phaser.Input.Pointer, obj: Card) {
     const isNotCardInstance = !(obj instanceof Card);
     if (isNotCardInstance) return;
     if (obj.isNotFlipped() && !this.blocked) {
+      this.sounds?.cardTap.play();
       obj.flipCard();
       this.activeCards = [...this.activeCards, obj];
     } else {
@@ -189,6 +243,7 @@ class MainScene extends Phaser.Scene {
     this.cardsList = [];
     this.cardsPositions = [];
     this.incorrectAttemptsMessage?.setText(`Incorrect: ${this.wrongAttempts}`);
+    this.elapsedTime = 0;
   }
 
   private preloadCardVariants() {

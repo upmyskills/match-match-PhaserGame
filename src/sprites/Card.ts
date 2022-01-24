@@ -77,7 +77,7 @@ class Card extends Phaser.GameObjects.Sprite {
   }
 
   public getStep() {
-    return this.step;
+    return this.direction ? this.step : -this.step;
   }
 
   public changeDirection() {
