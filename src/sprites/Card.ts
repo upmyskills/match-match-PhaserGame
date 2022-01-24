@@ -14,6 +14,7 @@ class Card extends Phaser.GameObjects.Sprite {
   private direction: boolean;
   private step = 0.03;
   private isGuessed = false;
+  private baseScale;
 
   constructor(cardObj: ICustomSprite) {
     super(cardObj.scene, cardObj.x, cardObj.y, cardObj.texture);
@@ -27,16 +28,40 @@ class Card extends Phaser.GameObjects.Sprite {
     this.direction = Math.random() * 10 - 5 > 0;
     this.setAngle(Math.random() * 3);
     this.setInteractive();
+    this.baseScale = cardObj.scale;
+  }
+
+  public flipCardAnim(texture: string) {
+    const conf = {
+      targets: this,
+      scaleX: 0,
+      ease: 'Linear',
+      duration: 150,
+      onComplete: () => this.changeTexture(texture),
+    };
+    this.scene.tweens.add(conf);
+  }
+
+  public changeTexture(texture: string) {
+    const conf = {
+      targets: this,
+      scaleX: this.baseScale,
+      ease: 'Linear',
+      duration: 150,
+    };
+
+    this.setTexture(texture);
+    this.scene.tweens.add(conf);
   }
 
   public flipCard() {
     this.isFlipped = true;
-    this.setTexture(this.secretValue);
+    this.flipCardAnim(this.secretValue);
   }
 
   public closeCard() {
     this.isFlipped = false;
-    this.setTexture(this.cardBack);
+    this.flipCardAnim(this.cardBack);
   }
 
   public isNotFlipped() {

@@ -99,7 +99,7 @@ class MainScene extends Phaser.Scene {
     this.blocked = true;
     const [firstCard, secondCard] = this.activeCards;
     const isSimilar = firstCard.compareWith(secondCard);
-    const blockTime = isSimilar ? 40 : 500;
+    const blockTime = isSimilar ? 300 : 1000;
     const timeout = setTimeout(() => {
       if (isSimilar) {
         this.activeCards.forEach((card) => {
