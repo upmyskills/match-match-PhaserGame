@@ -22,6 +22,9 @@ class MainScene extends Phaser.Scene {
   cardsList: Array<Card> = [];
   activeCards: Array<Card> = [];
   blocked = false;
+  wrongAttempts = 0;
+  incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
+  variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
 
   constructor() {
     super('MainScene');
@@ -45,7 +48,7 @@ class MainScene extends Phaser.Scene {
         colls: 6,
       },
     ];
-    [this.currentDifficulty] = this.difficulties;
+    [this.currentDifficulty] = this.difficulties.slice(2);
   }
 
   preload() {
@@ -64,11 +67,10 @@ class MainScene extends Phaser.Scene {
 
     this.setCardPositions(this.currentDifficulty);
     // this.createCards();
-    const variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
-    this.createCards(variants);
+    this.createCards(this.variants);
 
     this.input.on('gameobjectdown', this.flip, this);
-
+    this.incorrectAttemptsMessage = this.add.text(0, 0, `Incorrect: ${this.wrongAttempts}`).setColor('#ff0000');
     // const c = new Card({ scene: this, x: 0, y: 0, key: this.cardBack, scale: this.cardScale });
   }
 
@@ -96,12 +98,17 @@ class MainScene extends Phaser.Scene {
   private checkActiveCards() {
     this.blocked = true;
     const [firstCard, secondCard] = this.activeCards;
-    const isSame = firstCard.compareWith(secondCard);
-    const time = isSame ? 40 : 500;
+    const isSimilar = firstCard.compareWith(secondCard);
+    const blockTime = isSimilar ? 40 : 500;
     const timeout = setTimeout(() => {
-      if (isSame) {
-        this.activeCards.forEach((card) => card.setTint(0x00ff00).setAlpha(0.6));
+      if (isSimilar) {
+        this.activeCards.forEach((card) => {
+          card.setTint(0x00ff00).setAlpha(0.6);
+          card.guessed();
+        });
       } else {
+        this.wrongAttempts += 1;
+        this.incorrectAttemptsMessage?.setText(`Incorrect: ${this.wrongAttempts}`);
         this.activeCards.forEach((card) => {
           card.closeCard();
         });
@@ -110,7 +117,19 @@ class MainScene extends Phaser.Scene {
       clearTimeout(timeout);
       this.activeCards = [];
       this.blocked = false;
-    }, time);
+      this.checkGameStatus();
+    }, blockTime);
+  }
+
+  private checkGameStatus() {
+    const guessedCards = this.cardsList.filter((card) => card.getGuessStatus());
+    const isAllGuessed = this.cardsList.length === guessedCards.length;
+
+    if (isAllGuessed) {
+      this.clearGame();
+      this.setCardPositions(this.currentDifficulty);
+      this.createCards(this.variants);
+    }
   }
 
   private createCards(variants: Array<string>) {
@@ -124,11 +143,12 @@ class MainScene extends Phaser.Scene {
       }
     }
     Phaser.Utils.Array.Shuffle(this.cardsList);
-    this.cardsList.map((card, index) => card.setPosition(this.cardsPositions[index].posX, this.cardsPositions[index].posY));
+    this.cardsPositions.forEach((position, index) => this.cardsList[index].setPosition(position.posX, position.posY));
+    // this.cardsList.map((card, index) => card.setPosition(this.cardsPositions[index].posX, this.cardsPositions[index].posY));
   }
 
   private setCardPositions(difficulty: IDifficulty) {
-    this.eraseCards();
+    this.clearGame();
     for (let col = 0; col < difficulty.colls; col += 1) {
       for (let row = 0; row < difficulty.rows; row += 1) {
         const cardSpacing = 20;
@@ -149,15 +169,16 @@ class MainScene extends Phaser.Scene {
     }
   }
 
-  private eraseCards() {
-    this.cardsPositions = [];
+  private clearGame() {
+    this.cardsList.map((card) => card.destroy());
+    this.wrongAttempts = 0;
     this.cardsList = [];
+    this.cardsPositions = [];
+    this.incorrectAttemptsMessage?.setText(`Incorrect: ${this.wrongAttempts}`);
   }
 
   private preloadCardVariants() {
-    const variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
-
-    variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
+    this.variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
   }
 }
 

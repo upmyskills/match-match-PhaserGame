@@ -13,6 +13,7 @@ class Card extends Phaser.GameObjects.Sprite {
   private cardBack: string;
   private direction: boolean;
   private step = 0.03;
+  private isGuessed = false;
 
   constructor(cardObj: ICustomSprite) {
     super(cardObj.scene, cardObj.x, cardObj.y, cardObj.texture);
@@ -64,6 +65,14 @@ class Card extends Phaser.GameObjects.Sprite {
 
   public compareWith(card: Card) {
     return this.secretValue === card.getSecret();
+  }
+
+  public getGuessStatus() {
+    return this.isGuessed;
+  }
+
+  public guessed() {
+    this.isGuessed = true;
   }
 }
 
