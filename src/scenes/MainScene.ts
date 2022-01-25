@@ -6,25 +6,7 @@ import themeSound from '../assets/sounds/theme.mp3';
 import successSound from '../assets/sounds/success.mp3';
 import completeSound from '../assets/sounds/complete.mp3';
 import timeisoverSound from '../assets/sounds/timeout.mp3';
-
-interface ICardsPositions {
-  posX: number;
-  posY: number;
-}
-
-interface IDifficulty {
-  name: string;
-  rows: number;
-  colls: number;
-}
-
-interface ISounds {
-  cardTap: Phaser.Sound.BaseSound;
-  themeSound: Phaser.Sound.BaseSound;
-  success: Phaser.Sound.BaseSound;
-  complete: Phaser.Sound.BaseSound;
-  timeisover: Phaser.Sound.BaseSound;
-}
+import { ICardsPositions, IDifficulty, ISounds } from '../interfaces';
 
 class MainScene extends Phaser.Scene {
   cardsPositions: Array<ICardsPositions>;
@@ -34,11 +16,12 @@ class MainScene extends Phaser.Scene {
   cardBack = 'cardbackImage';
   cardsList: Array<Card> = [];
   activeCards: Array<Card> = [];
+  canvasCenterPoint = { x: 0, y: 0 };
   blocked = false;
   wrongAttempts = 0;
   incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
   variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
-  gameTime = 30;
+  gameTime = 15;
   elapsedTime = 0;
   elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
   sounds: ISounds | undefined;
@@ -65,7 +48,8 @@ class MainScene extends Phaser.Scene {
         colls: 6,
       },
     ];
-    [this.currentDifficulty] = this.difficulties;
+
+    [this.currentDifficulty] = this.difficulties.splice(1);
   }
 
   preload() {
@@ -78,25 +62,39 @@ class MainScene extends Phaser.Scene {
     this.load.audio('timeisoverSound', timeisoverSound);
     this.load.audio('successSound', successSound);
     this.load.audio('completeSound', completeSound);
-  }
 
-  create() {
-    const canvasCenterPoint = {
+    this.canvasCenterPoint = {
       x: Number(this.sys.game.config.width) / 2,
       y: Number(this.sys.game.config.height) / 2,
     };
+  }
 
-    this.add.sprite(canvasCenterPoint.x, canvasCenterPoint.y, 'bgImage');
-    this.initSounds();
-    this.initGame();
-
-    this.input.on('gameobjectdown', this.flip, this);
-    this.incorrectAttemptsMessage = this.add.text(0, 0, `Incorrect: ${this.wrongAttempts}`, { color: '#000' });
-    this.elapsedTimeMessage = this.add.text(500, 0, `Time: ${this.gameTime - this.elapsedTime}`, {
+  create() {
+    this.incorrectAttemptsMessage = this.add.text(0, 0, ``, {
       color: '#000',
       fontFamily: 'CevicheOne-Regular',
       fontSize: '48px',
       fontStyle: 'bold',
+    });
+
+    this.add.sprite(this.canvasCenterPoint.x, this.canvasCenterPoint.y, 'bgImage');
+    this.initSounds();
+    this.initGame();
+
+    this.input.on('gameobjectdown', this.flip, this);
+
+    this.incorrectAttemptsMessage = this.add.text(210, 0, ` `, {
+      color: '#000',
+      fontFamily: 'CevicheOne-Regular',
+      fontSize: '42px',
+      // fontStyle: 'bold',
+    });
+
+    this.elapsedTimeMessage = this.add.text(540, 0, ` `, {
+      color: '#000',
+      fontFamily: 'CevicheOne-Regular',
+      fontSize: '42px',
+      // fontStyle: 'bold',
     });
   }
 
@@ -111,37 +109,54 @@ class MainScene extends Phaser.Scene {
   private initSounds() {
     this.sounds = {
       cardTap: this.sound.add('cardTapSound', { volume: 0.05 }),
-      themeSound: this.sound.add('themeSound', { volume: 0.1 }),
+      themeSound: this.sound.add('themeSound', { volume: 0.05 }),
       complete: this.sound.add('completeSound'),
       timeisover: this.sound.add('timeisoverSound'),
       success: this.sound.add('successSound'),
     };
+
+    this.sounds?.themeSound.play({ loop: true });
   }
 
   private initGame() {
     this.setCardPositions(this.currentDifficulty);
     this.createCards(this.variants);
-    this.createTimer();
-    this.sounds?.themeSound.play({ loop: true });
+    this.layoutCards();
   }
 
   private endGame() {
-    const isGc = this.cardsList.length === this.cardsList.filter((card) => card.getGuessStatus()).length;
+    const isComplete = this.cardsList.length === this.cardsList.filter((card) => card.getGuessStatus()).length;
     const tmpl = `
       My war is over!!!\n
       Wrong attempts: ${this.wrongAttempts}!\n
-      ${isGc ? 'Congratulation!' : 'GAME OVER!'}
+      Elapsed time: ${this.elapsedTime}!\n\n
+      ${isComplete ? '! Congratulation !' : '!!! GAME OVER !!!'}\n
     `;
 
-    if (isGc) {
+    const textConfig: Phaser.Types.GameObjects.Text.TextStyle = {
+      color: '#000000',
+      fontFamily: 'CevicheOne-Regular',
+      fontSize: '48px',
+      align: 'center',
+    };
+
+    if (isComplete) {
       this.sounds?.complete.play();
     } else {
       this.sounds?.timeisover.play();
     }
 
-    this.time.removeAllEvents();
+    const tempMessage = this.add.text(this.canvasCenterPoint.x, this.canvasCenterPoint.y, tmpl, textConfig).setOrigin(0.5, 0.5);
+    tempMessage.setInteractive();
+    tempMessage.on('pointerdown', () => {
+      tempMessage.destroy();
+      this.initGame();
+    });
+  }
 
-    this.add.text(300, 300, tmpl, { color: '#000000', fontFamily: 'Arial', fontSize: '48px', align: 'center' }).setOrigin(0.5, 0.5);
+  private stopGame() {
+    this.time.removeAllEvents();
+    this.dropDownCards().then(() => this.clearGame());
   }
 
   private createTimer() {
@@ -150,15 +165,16 @@ class MainScene extends Phaser.Scene {
       callback: this.onTick,
       callbackScope: this,
       loop: true,
+      repeat: 0,
     });
   }
 
   private onTick() {
-    if (this.elapsedTime > this.gameTime) {
-      this.endGame();
-      this.time.removeAllEvents();
-      this.clearGame();
+    if (this.elapsedTime >= this.gameTime) {
+      this.stopGame();
+      return;
     }
+
     this.elapsedTimeMessage?.setText(`Time: ${this.gameTime - this.elapsedTime}`);
     this.elapsedTime += 1;
   }
@@ -223,8 +239,7 @@ class MainScene extends Phaser.Scene {
     const isAllGuessed = this.cardsList.length === guessedCards.length;
 
     if (isAllGuessed) {
-      this.endGame();
-      this.clearGame();
+      this.stopGame();
     }
   }
 
@@ -239,12 +254,12 @@ class MainScene extends Phaser.Scene {
       }
     }
     Phaser.Utils.Array.Shuffle(this.cardsList);
-    this.cardsPositions.forEach((position, index) => this.cardsList[index].setPosition(position.posX, position.posY));
+    this.cardsPositions.forEach((position, index) => this.cardsList[index].init(position));
     // this.cardsList.map((card, index) => card.setPosition(this.cardsPositions[index].posX, this.cardsPositions[index].posY));
   }
 
   private setCardPositions(difficulty: IDifficulty) {
-    this.clearGame();
+    // this.clearGame();
     for (let col = 0; col < difficulty.colls; col += 1) {
       for (let row = 0; row < difficulty.rows; row += 1) {
         const cardSpacing = 20;
@@ -265,12 +280,39 @@ class MainScene extends Phaser.Scene {
     }
   }
 
+  private layoutCards() {
+    this.blocked = true;
+    const promiseList = this.cardsList.reverse().map((card, index) => card.moveToPosition({ index }));
+    Promise.all(promiseList).then(() => {
+      this.createTimer();
+      this.blocked = false;
+    });
+  }
+
+  private async dropDownCards() {
+    this.blocked = true;
+    const promiseList = this.cardsList.map((card, index) => {
+      const confMove = {
+        index,
+        posX: Number(this.sys.game.config.width) + card.width,
+        posY: Number(this.sys.game.config.height) + card.height,
+      };
+      return card.moveToPosition(confMove);
+    });
+    await Promise.allSettled(promiseList).then(() => {
+      this.endGame();
+      this.blocked = false;
+    });
+  }
+
   private clearGame() {
+    this.activeCards = [];
     this.cardsList.map((card) => card.destroy());
     this.wrongAttempts = 0;
     this.cardsList = [];
     this.cardsPositions = [];
-    this.incorrectAttemptsMessage?.setText(`Incorrect: ${this.wrongAttempts}`);
+    this.incorrectAttemptsMessage?.setText(``);
+    this.elapsedTimeMessage?.setText('');
     this.elapsedTime = 0;
   }
 
