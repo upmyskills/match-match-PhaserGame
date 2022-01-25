@@ -21,13 +21,13 @@ class MainScene extends Phaser.Scene {
   wrongAttempts = 0;
   incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
   variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
-  gameTime = 15;
-  elapsedTime = 0;
+  gameTime = 10;
+  elapsedTime = 1;
   elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
   sounds: ISounds | undefined;
 
   constructor() {
-    super('MainScene');
+    super({ key: 'MainScene' });
 
     this.cardsPositions = [];
     this.cardScale = 0.6;
@@ -49,7 +49,7 @@ class MainScene extends Phaser.Scene {
       },
     ];
 
-    [this.currentDifficulty] = this.difficulties.splice(1);
+    [this.currentDifficulty] = this.difficulties.splice(0);
   }
 
   preload() {
@@ -69,17 +69,13 @@ class MainScene extends Phaser.Scene {
     };
   }
 
-  create() {
-    this.incorrectAttemptsMessage = this.add.text(0, 0, ``, {
-      color: '#000',
-      fontFamily: 'CevicheOne-Regular',
-      fontSize: '48px',
-      fontStyle: 'bold',
-    });
-
-    this.add.sprite(this.canvasCenterPoint.x, this.canvasCenterPoint.y, 'bgImage');
+  create(config: any) {
+    console.log(config);
+    if (config.difficulty) {
+      this.currentDifficulty = config.difficulty;
+    }
     this.initSounds();
-    this.initGame();
+    const bg = this.add.sprite(this.canvasCenterPoint.x, this.canvasCenterPoint.y, 'bgImage');
 
     this.input.on('gameobjectdown', this.flip, this);
 
@@ -89,6 +85,8 @@ class MainScene extends Phaser.Scene {
       fontSize: '42px',
       // fontStyle: 'bold',
     });
+
+    this.initGame();
 
     this.elapsedTimeMessage = this.add.text(540, 0, ` `, {
       color: '#000',
@@ -125,13 +123,23 @@ class MainScene extends Phaser.Scene {
   }
 
   private endGame() {
-    const isComplete = this.cardsList.length === this.cardsList.filter((card) => card.getGuessStatus()).length;
+    const guessedCardsCount = this.cardsList.filter((card) => card.getGuessStatus()).length;
+    const isComplete = this.cardsList.length === guessedCardsCount;
+    this.sounds?.themeSound.stop();
+    this.scene.start('ConfigScene', { isComplete, guessedCardsCount: guessedCardsCount / 2 });
     const tmpl = `
       My war is over!!!\n
       Wrong attempts: ${this.wrongAttempts}!\n
+      Cards guessed: ${guessedCardsCount}!\n
       Elapsed time: ${this.elapsedTime}!\n\n
       ${isComplete ? '! Congratulation !' : '!!! GAME OVER !!!'}\n
     `;
+
+    if (isComplete) {
+      this.sounds?.complete.play();
+    } else {
+      this.sounds?.timeisover.play();
+    }
 
     const textConfig: Phaser.Types.GameObjects.Text.TextStyle = {
       color: '#000000',
@@ -140,11 +148,8 @@ class MainScene extends Phaser.Scene {
       align: 'center',
     };
 
-    if (isComplete) {
-      this.sounds?.complete.play();
-    } else {
-      this.sounds?.timeisover.play();
-    }
+    // this.sounds?.themeSound.stop();
+    // this.scene.start('ConfigScene');
 
     const tempMessage = this.add.text(this.canvasCenterPoint.x, this.canvasCenterPoint.y, tmpl, textConfig).setOrigin(0.5, 0.5);
     tempMessage.setInteractive();
@@ -154,12 +159,16 @@ class MainScene extends Phaser.Scene {
     });
   }
 
-  private stopGame() {
+  private stopGame(custom = true) {
     this.time.removeAllEvents();
-    this.dropDownCards().then(() => this.clearGame());
+    this.dropDownCards().then(() => {
+      if (custom) this.endGame();
+      this.clearGame();
+    });
   }
 
   private createTimer() {
+    this.elapsedTimeMessage?.setText(`Time: ${this.gameTime}`);
     this.time.addEvent({
       delay: 1000,
       callback: this.onTick,
@@ -170,12 +179,13 @@ class MainScene extends Phaser.Scene {
   }
 
   private onTick() {
+    this.elapsedTimeMessage?.setText(`Time: ${this.gameTime - this.elapsedTime}`);
+
     if (this.elapsedTime >= this.gameTime) {
       this.stopGame();
       return;
     }
 
-    this.elapsedTimeMessage?.setText(`Time: ${this.gameTime - this.elapsedTime}`);
     this.elapsedTime += 1;
   }
 
@@ -207,7 +217,7 @@ class MainScene extends Phaser.Scene {
         if (isSimilar) {
           this.sounds?.success.play();
           this.activeCards.forEach((card) => {
-            card.setTint(0x00ff00).setAlpha(0.6);
+            card.setTint(0x00ff00).setAlpha(0.7);
             card.guessed();
             this.blocked = false;
           });
@@ -215,7 +225,7 @@ class MainScene extends Phaser.Scene {
           this.wrongAttempts += 1;
           this.incorrectAttemptsMessage?.setText(`Incorrect: ${this.wrongAttempts}`);
           this.activeCards.forEach((card) => {
-            card.setTint(0xff0000).setAlpha(0.6);
+            card.setTint(0xff0136).setAlpha(0.7);
 
             this.time.addEvent({
               delay: 500,
@@ -300,7 +310,6 @@ class MainScene extends Phaser.Scene {
       return card.moveToPosition(confMove);
     });
     await Promise.allSettled(promiseList).then(() => {
-      this.endGame();
       this.blocked = false;
     });
   }
@@ -313,7 +322,7 @@ class MainScene extends Phaser.Scene {
     this.cardsPositions = [];
     this.incorrectAttemptsMessage?.setText(``);
     this.elapsedTimeMessage?.setText('');
-    this.elapsedTime = 0;
+    this.elapsedTime = 1;
   }
 
   private preloadCardVariants() {

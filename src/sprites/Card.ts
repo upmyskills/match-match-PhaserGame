@@ -13,26 +13,8 @@ class Card extends Phaser.GameObjects.Sprite {
   constructor(cardObj: ICustomSprite) {
     super(cardObj.scene, cardObj.x, cardObj.y, cardObj.texture);
     cardObj.scene.add.existing(this);
-    // this.setOrigin(0, 0);
     this.setScale(cardObj.scale);
     this.secretValue = cardObj.secret;
-
-    // this.on('pointerdown', this.flipCard, this);        /*  like as Eventlistener  */
-    // this.on('pointerout', () => {
-    //   this.scene.tweens.add({
-    //     targets: this,
-    //     duration: 70,
-    //     scale: this.baseScale,
-    //   });
-    // });
-
-    // this.on('pointerover', () => {
-    //   this.scene.tweens.add({
-    //     targets: this,
-    //     duration: 70,
-    //     scale: this.baseScale + 0.02,
-    //   });
-    // });
 
     this.cardBack = cardObj.texture as string;
     this.direction = Math.random() * 10 - 5 > 0;
