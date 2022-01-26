@@ -5,6 +5,10 @@ module.exports = {
   devtool: 'cheap-module-source-map',
   devServer: {
     port: 3001,
+    client: {
+      progress: true,
+      reconnect: true,
+    },
     open: {
       app: ['chrome', '--incognito'],
       // app: ['google-chrome', '--incognito'],
@@ -14,5 +18,6 @@ module.exports = {
     contentBase: path.resolve(__dirname, './src/public'),
     overlay: true,
     historyApiFallback: true,
+    host: 'local-ipv4',
   }
 }
