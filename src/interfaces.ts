@@ -1,3 +1,12 @@
+export interface IButtonParams {
+  scene: Phaser.Scene;
+  type: string;
+  posX: number;
+  posY: number;
+  label: string;
+  callback?: () => void;
+}
+
 export interface ICardsPositions {
   posX: number;
   posY: number;

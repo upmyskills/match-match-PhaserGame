@@ -49,7 +49,7 @@ class MainScene extends Phaser.Scene {
       },
     ];
 
-    [this.currentDifficulty] = this.difficulties.splice(0);
+    [this.currentDifficulty] = this.difficulties;
   }
 
   preload() {
@@ -87,6 +87,7 @@ class MainScene extends Phaser.Scene {
     });
 
     this.initGame();
+    // this.scene.launch('ConfigScene');
 
     this.elapsedTimeMessage = this.add.text(540, 0, ` `, {
       color: '#000',
@@ -94,6 +95,27 @@ class MainScene extends Phaser.Scene {
       fontSize: '42px',
       // fontStyle: 'bold',
     });
+
+    const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!');
+    button.setInteractive();
+    button.on('pointerdown', () => {
+      console.log('Click to change scene!');
+      // this.scene.pause();
+      this.scene.run('ConfigScene', { difficulties: this.difficulties, currentDifficulty: this.currentDifficulty });
+    });
+    // this.switchToConfig();
+  }
+
+  switchToConfig() {
+    console.log(this.game.config);
+    const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!');
+    button.setInteractive();
+    button.on('pointerdown', () => {
+      console.log('Click to change scene!');
+      this.scene.launch('ConfigScene');
+    });
+    // this.scene.pause();
+    // this.scene.launch();
   }
 
   update() {
@@ -125,8 +147,8 @@ class MainScene extends Phaser.Scene {
   private endGame() {
     const guessedCardsCount = this.cardsList.filter((card) => card.getGuessStatus()).length;
     const isComplete = this.cardsList.length === guessedCardsCount;
-    this.sounds?.themeSound.stop();
-    this.scene.start('ConfigScene', { isComplete, guessedCardsCount: guessedCardsCount / 2 });
+    // this.sounds?.themeSound.stop();
+    // this.scene.start('ConfigScene', { isComplete, guessedCardsCount: guessedCardsCount / 2 });
     const tmpl = `
       My war is over!!!\n
       Wrong attempts: ${this.wrongAttempts}!\n
