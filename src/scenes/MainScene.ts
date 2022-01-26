@@ -7,6 +7,7 @@ import successSound from '../assets/sounds/success.mp3';
 import completeSound from '../assets/sounds/complete.mp3';
 import timeisoverSound from '../assets/sounds/timeout.mp3';
 import { ICardsPositions, IDifficulty, ISounds } from '../interfaces';
+import { commonStyle } from '../utils/fontStyles';
 
 class MainScene extends Phaser.Scene {
   cardsPositions: Array<ICardsPositions>;
@@ -21,6 +22,7 @@ class MainScene extends Phaser.Scene {
   wrongAttempts = 0;
   incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
   variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
+  timeCountList = [3, 10, 15, 30, 45, 60];
   gameTime = 10;
   elapsedTime = 1;
   elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
@@ -49,7 +51,8 @@ class MainScene extends Phaser.Scene {
       },
     ];
 
-    [this.currentDifficulty] = this.difficulties;
+    // eslint-disable-next-line prefer-destructuring
+    this.currentDifficulty = this.difficulties[2];
   }
 
   preload() {
@@ -70,7 +73,7 @@ class MainScene extends Phaser.Scene {
   }
 
   create(config: any) {
-    console.log(config);
+    console.log('We get', config);
     if (config.difficulty) {
       this.currentDifficulty = config.difficulty;
     }
@@ -100,15 +103,20 @@ class MainScene extends Phaser.Scene {
     button.setInteractive();
     button.on('pointerdown', () => {
       console.log('Click to change scene!');
-      // this.scene.pause();
-      this.scene.run('ConfigScene', { difficulties: this.difficulties, currentDifficulty: this.currentDifficulty });
+      this.scene.pause();
+      this.clearGame();
+      this.scene.run('ConfigScene', {
+        difficulties: this.difficulties,
+        currentDifficulty: this.currentDifficulty,
+        gameTime: this.gameTime,
+        timeCountList: this.timeCountList,
+      });
     });
     // this.switchToConfig();
   }
 
   switchToConfig() {
-    console.log(this.game.config);
-    const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!');
+    const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!', commonStyle);
     button.setInteractive();
     button.on('pointerdown', () => {
       console.log('Click to change scene!');

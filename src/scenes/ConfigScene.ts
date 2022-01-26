@@ -1,4 +1,3 @@
-import { Button } from '../components/Button';
 import { IDifficulty } from '../interfaces';
 import { activeStyle, commonStyle, headerStyle, paragraphStyle } from '../utils/fontStyles';
 
@@ -6,25 +5,38 @@ interface ICurrentConfig {
   gameTime?: number;
   cardBack?: string;
   currentDifficulty?: IDifficulty;
-  difficulties?: Array<IDifficulty>;
+  difficulties: Array<IDifficulty>;
+  timeCountList?: Array<number>;
 }
 
 class ConfigScene extends Phaser.Scene {
-  currentConfig: ICurrentConfig | undefined;
+  prevConfig!: ICurrentConfig;
+  difficultiesGroup: Phaser.GameObjects.Group | undefined;
+  gameTimeGroup: Phaser.GameObjects.Group | undefined;
+  newConfig!: ICurrentConfig;
+
   constructor() {
     super({ key: 'ConfigScene', visible: false });
   }
 
-  create(currentConfig: ICurrentConfig) {
-    console.log(currentConfig);
-    this.currentConfig = currentConfig;
-    this.drawArea();
-    // const apply = this.add.text(100, 100, 'ConfigScene', { fontSize: '32px', fontStyle: 'bold' }).setInteractive();
+  create(prevConfig: ICurrentConfig) {
+    console.log('We get: ', prevConfig);
+    this.prevConfig = prevConfig;
+    this.newConfig = prevConfig;
+    this.difficultiesGroup = this.add.group();
+    this.gameTimeGroup = this.add.group();
 
-    // apply.on('pointerdown', () => {
-    //   this.scene.setVisible(false);
-    //   this.scene.resume('MainScene');
-    // });
+    this.drawArea();
+    this.setApplyButton();
+  }
+
+  setApplyButton() {
+    const apply = this.add.text(100, 100, 'Apply', commonStyle).setInteractive();
+
+    apply.on('pointerdown', () => {
+      this.scene.setVisible(false);
+      this.scene.run('MainScene', this.newConfig);
+    });
   }
 
   drawArea() {
@@ -43,26 +55,55 @@ class ConfigScene extends Phaser.Scene {
       .setStyle(headerStyle);
 
     const difficultyText = this.add
-      .text(sceneWidth / 7, rectOffsetY * 4, 'Difficylty:', { fontSize: '28px', fontStyle: 'bold' })
+      .text(sceneWidth / 6, rectOffsetY * 5, 'Difficulty:')
       .setOrigin(0.5)
-      .setStyle(paragraphStyle);
+      .setStyle(paragraphStyle)
+      .setInteractive();
 
-    const difficultiesGroup = this.add.group();
-    const gameTimeGroup = this.add.group();
-
-    this.currentConfig?.difficulties?.forEach((diff, index) => {
-      const isActive = diff.name === this.currentConfig?.currentDifficulty?.name;
-      const dfc = this.add
-        .text((sceneWidth / 5) * (index + 1) + difficultyText.width, rectOffsetY * 4, diff.name, { fontSize: '22px' })
+    this.prevConfig?.difficulties?.forEach((diff, index) => {
+      const isActive = diff.name === this.prevConfig?.currentDifficulty?.name;
+      const styles = isActive ? activeStyle : commonStyle;
+      const text = this.add
+        .text((sceneWidth / 5) * (index + 1) + difficultyText.width, rectOffsetY * 5, diff.name)
         .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .setStyle(commonStyle);
+        .setStyle(styles)
+        .setInteractive({ useHandCursor: true });
 
-      if (isActive) dfc.setStyle(activeStyle);
-      difficultiesGroup.add(dfc);
+      text.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+        const [curr] = this.prevConfig.difficulties.filter((dfclt) => dfclt.name.toLowerCase() === text.text.toLowerCase());
+        this.changeDifficulty(curr);
+      });
+
+      this.difficultiesGroup?.add(text);
     });
 
-    console.log('GROUP:', difficultiesGroup);
+    const timeCountText = this.add
+      .text(sceneWidth / 6, rectOffsetY * 7, 'Time:')
+      .setOrigin(0.5)
+      .setStyle(paragraphStyle)
+      .setInteractive();
+
+    this.prevConfig.timeCountList?.forEach((numb, index) => {
+      const text = this.add
+        .text(sceneWidth / this.prevConfig.timeCountList!.length + timeCountText.width, rectOffsetY * 7, numb.toString())
+        .setOrigin(0.5)
+        .setStyle(commonStyle)
+        .setInteractive({ useHandCursor: true });
+    });
+  }
+
+  changeDifficulty(diff: IDifficulty) {
+    // this.newConfig?.currentDifficulty = ;
+    // this.prevConfig?.difficulties.filter((element) => {
+    //   element.name ===
+    // });
+    this.difficultiesGroup?.children.getArray().forEach((text) => {
+      const isActive = (text as Phaser.GameObjects.Text).text === diff.name;
+      const style = isActive ? activeStyle : commonStyle;
+      (text as Phaser.GameObjects.Text).setStyle(style);
+    });
+    this.newConfig.currentDifficulty = diff;
+    console.log(this.newConfig);
   }
 }
 
