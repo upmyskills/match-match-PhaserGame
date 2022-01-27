@@ -9,6 +9,7 @@ interface IData {
 class ConfigScene extends Phaser.Scene {
   difficultiesGroup: Phaser.GameObjects.Group | undefined;
   gameTimeGroup: Phaser.GameObjects.Group | undefined;
+  cardBackGroup!: Phaser.GameObjects.Group;
   prevConfig!: IGameConfig;
   newConfig!: IGameConfig;
   additionalParams!: IAdditionalParams;
@@ -26,6 +27,7 @@ class ConfigScene extends Phaser.Scene {
     this.newConfig = { ...gameConfig };
     this.difficultiesGroup = this.add.group();
     this.gameTimeGroup = this.add.group();
+    this.cardBackGroup = this.add.group();
     this.additionalParams = additionalParams;
 
     this.drawArea();
@@ -34,9 +36,10 @@ class ConfigScene extends Phaser.Scene {
 
   setApplyButton() {
     const apply = this.add.text(450, 500, 'Apply', commonStyle).setInteractive();
-
+    apply.setOrigin(0.5);
     apply.on('pointerdown', () => {
       this.scene.setVisible(false);
+      this.scene.setActive(false);
       this.scene.launch('MainScene', { gameConfig: this.newConfig });
     });
   }
@@ -102,6 +105,29 @@ class ConfigScene extends Phaser.Scene {
         });
       this.gameTimeGroup?.add(text);
     });
+
+    const cardVariantText = this.add
+      .text(sceneWidth / 6, rectOffsetY * 12, 'Cardback:')
+      .setOrigin(0.5)
+      .setStyle(paragraphStyle)
+      .setInteractive();
+
+    this.additionalParams.cardBackVariants.forEach((cardBack, index) => {
+      const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
+      const startPosition = timeCountText.x + timeCountText.width - 20;
+      const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
+      const cardImg = this.add
+        .image(positionX, rectOffsetY * 12, cardBack)
+        .setOrigin(0.5)
+        .setScale(0.4)
+        .setInteractive({ useHandCursor: true })
+        .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+          // this.newConfig.cardBack = cardBack;
+          this.changeCardBackBariant(cardBack);
+        });
+      if (cardBack === this.prevConfig.cardBack) cardImg.setTint(0x00ff00);
+      this.cardBackGroup.add(cardImg);
+    });
   }
 
   getDifficulty(diff: number) {
@@ -127,6 +153,20 @@ class ConfigScene extends Phaser.Scene {
     });
     this.newConfig.gameTime = Number(sec);
     console.log(this.newConfig);
+  }
+
+  changeCardBackBariant(cardback: string) {
+    this.cardBackGroup.children.getArray().forEach((item) => {
+      const isActive = (item as Phaser.GameObjects.Image).texture.key === cardback;
+      if (isActive) {
+        (item as Phaser.GameObjects.Image).setTint(0x00ff00);
+      } else {
+        (item as Phaser.GameObjects.Image).setTint();
+      }
+
+      this.newConfig.cardBack = cardback;
+      console.log(this.newConfig);
+    });
   }
 }
 

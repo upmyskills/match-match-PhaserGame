@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import { Card } from '../sprites/Card';
 import { IAdditionalParams, ICardsPositions, IDifficulty, IGameConfig, ISounds } from '../interfaces';
 import { commonStyle } from '../utils/fontStyles';
@@ -30,6 +31,8 @@ class MainScene extends Phaser.Scene {
       },
     ],
     timeCountList: [3, 10, 20, 30, 50, 60],
+    scene: this,
+    cardBackVariants: [],
   };
 
   cardsPositions: Array<ICardsPositions>;
@@ -43,6 +46,7 @@ class MainScene extends Phaser.Scene {
   elapsedTime = 1;
   elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
   sounds: ISounds | undefined;
+  gameTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -51,23 +55,24 @@ class MainScene extends Phaser.Scene {
     this.cardScale = 0.6;
   }
 
+  init(data: any) {
+    console.log('In init method:', data);
+  }
+
   preload() {
     this.preloadCardVariants();
   }
 
-  create(data: { gameConfig: IGameConfig; sounds: ISounds }) {
+  async create(data: { gameConfig: IGameConfig; sounds: ISounds; cardBackVariants: Array<string> }) {
     if (data.sounds) this.sounds = data.sounds;
+    if (data.cardBackVariants) this.additionInfo.cardBackVariants = data.cardBackVariants;
     // if (data.gameConfig) this.cardsList = [];
     this.canvasCenterPoint = {
       x: Number(this.sys.game.config.width) / 2,
       y: Number(this.sys.game.config.height) / 2,
     };
 
-    console.log('Sounds: ', this.sounds);
     console.log('MainScene: ', data);
-    if (data.gameConfig) {
-      this.gameConfig.currentDifficulty = data.gameConfig.currentDifficulty;
-    }
 
     this.input.on('gameobjectdown', this.flip, this);
 
@@ -78,21 +83,35 @@ class MainScene extends Phaser.Scene {
       // fontStyle: 'bold',
     });
 
-    this.initGame();
-
     this.elapsedTimeMessage = this.add.text(540, 0, ` `, {
       color: '#000',
       fontFamily: 'CevicheOne-Regular',
       fontSize: '42px',
     });
 
+    if (data.gameConfig) {
+      console.log('Set config!');
+      console.log('In create cards: ', this.cardsList);
+      // await this.dropDownCards();
+      // this.clearGame();
+      // this.initGame();
+      this.gameConfig = { ...this.gameConfig, ...data.gameConfig };
+      // this.stopGame(false);
+      this.clearGame();
+      // this.initGame();
+    }
+
+    this.initGame();
+    // await this.dropDownCards();
+
     const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!');
     button.setInteractive();
     button.on('pointerdown', () => {
       console.log('Click to change scene!');
       this.scene.pause();
-      this.clearGame();
-      this.scene.run('ConfigScene', { gameConfig: this.gameConfig, additionalParams: this.additionInfo });
+      // this.clearGame();
+      this.scene.launch('ConfigScene', { gameConfig: this.gameConfig, additionalParams: this.additionInfo });
+      // if (!this.blocked) this.stopGame();
     });
     // this.switchToConfig();
   }
@@ -121,6 +140,7 @@ class MainScene extends Phaser.Scene {
   }
 
   private initGame() {
+    console.log('INIT GAME!');
     const [difficulty] = this.getDifficulties().slice(this.gameConfig.currentDifficulty);
     this.setCardPositions(difficulty);
     this.createCards(this.gameConfig.variants);
@@ -128,6 +148,7 @@ class MainScene extends Phaser.Scene {
   }
 
   private endGame() {
+    console.log('END GAME RUNNED!');
     const guessedCardsCount = this.cardsList.filter((card) => card.getGuessStatus()).length;
     const isComplete = this.cardsList.length === guessedCardsCount;
     // this.sounds?.themeSound.stop();
@@ -164,8 +185,11 @@ class MainScene extends Phaser.Scene {
     });
   }
 
-  private stopGame(custom = true) {
-    this.time.removeAllEvents();
+  public stopGame(custom = true) {
+    console.log('GAME TIMER:', this.gameTimer);
+    if (this.gameTimer) {
+      this.time.removeEvent(this.gameTimer);
+    }
     this.dropDownCards().then(() => {
       if (custom) this.endGame();
       this.clearGame();
@@ -174,7 +198,7 @@ class MainScene extends Phaser.Scene {
 
   private createTimer() {
     this.elapsedTimeMessage?.setText(`Time: ${this.gameConfig.gameTime}`);
-    this.time.addEvent({
+    this.gameTimer = this.time.addEvent({
       delay: 1000,
       callback: this.onTick,
       callbackScope: this,
@@ -297,6 +321,7 @@ class MainScene extends Phaser.Scene {
   }
 
   private layoutCards() {
+    console.log('In layout: ', this.cardsList);
     this.blocked = true;
     const promiseList = this.cardsList.reverse().map((card, index) => card.moveToPosition({ index }));
     Promise.all(promiseList).then(() => {
@@ -308,6 +333,7 @@ class MainScene extends Phaser.Scene {
   private async dropDownCards() {
     this.blocked = true;
     const promiseList = this.cardsList.map((card, index) => {
+      console.log(card);
       const confMove = {
         index,
         posX: Number(this.sys.game.config.width) + card.width,

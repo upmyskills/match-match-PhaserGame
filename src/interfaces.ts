@@ -53,4 +53,6 @@ export interface IGameConfig {
 export interface IAdditionalParams {
   difficulties: Array<IDifficulty>;
   timeCountList: Array<number>;
+  scene: Phaser.Scene;
+  cardBackVariants: Array<string>;
 }
