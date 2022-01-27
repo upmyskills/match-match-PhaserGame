@@ -1,41 +1,43 @@
-import { IDifficulty } from '../interfaces';
+import { IAdditionalParams, IGameConfig } from '../interfaces';
 import { activeStyle, commonStyle, headerStyle, paragraphStyle } from '../utils/fontStyles';
 
-interface ICurrentConfig {
-  gameTime?: number;
-  cardBack?: string;
-  currentDifficulty?: IDifficulty;
-  difficulties: Array<IDifficulty>;
-  timeCountList?: Array<number>;
+interface IData {
+  gameConfig: IGameConfig;
+  additionalParams: IAdditionalParams;
 }
 
 class ConfigScene extends Phaser.Scene {
-  prevConfig!: ICurrentConfig;
   difficultiesGroup: Phaser.GameObjects.Group | undefined;
   gameTimeGroup: Phaser.GameObjects.Group | undefined;
-  newConfig!: ICurrentConfig;
+  prevConfig!: IGameConfig;
+  newConfig!: IGameConfig;
+  additionalParams!: IAdditionalParams;
 
   constructor() {
     super({ key: 'ConfigScene', visible: false });
   }
 
-  create(prevConfig: ICurrentConfig) {
-    console.log('We get: ', prevConfig);
-    this.prevConfig = prevConfig;
-    this.newConfig = prevConfig;
+  create(data: IData) {
+    const { gameConfig, additionalParams } = data;
+
+    console.log('ConfigScene get: ', data);
+
+    this.prevConfig = gameConfig;
+    this.newConfig = { ...gameConfig };
     this.difficultiesGroup = this.add.group();
     this.gameTimeGroup = this.add.group();
+    this.additionalParams = additionalParams;
 
     this.drawArea();
     this.setApplyButton();
   }
 
   setApplyButton() {
-    const apply = this.add.text(100, 100, 'Apply', commonStyle).setInteractive();
+    const apply = this.add.text(450, 500, 'Apply', commonStyle).setInteractive();
 
     apply.on('pointerdown', () => {
       this.scene.setVisible(false);
-      this.scene.run('MainScene', this.newConfig);
+      this.scene.launch('MainScene', { gameConfig: this.newConfig });
     });
   }
 
@@ -60,8 +62,9 @@ class ConfigScene extends Phaser.Scene {
       .setStyle(paragraphStyle)
       .setInteractive();
 
-    this.prevConfig?.difficulties?.forEach((diff, index) => {
-      const isActive = diff.name === this.prevConfig?.currentDifficulty?.name;
+    this.additionalParams.difficulties.forEach((diff, index) => {
+      const currentDiff = this.getDifficulty(this.prevConfig.currentDifficulty);
+      const isActive = diff.name === currentDiff.name;
       const styles = isActive ? activeStyle : commonStyle;
       const text = this.add
         .text((sceneWidth / 5) * (index + 1) + difficultyText.width, rectOffsetY * 5, diff.name)
@@ -70,39 +73,59 @@ class ConfigScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       text.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
-        const [curr] = this.prevConfig.difficulties.filter((dfclt) => dfclt.name.toLowerCase() === text.text.toLowerCase());
-        this.changeDifficulty(curr);
+        const curr = this.additionalParams.difficulties.map((dfclt) => dfclt.name.toLowerCase() === text.text.toLowerCase());
+        this.changeDifficulty(curr.indexOf(true));
       });
 
       this.difficultiesGroup?.add(text);
     });
 
     const timeCountText = this.add
-      .text(sceneWidth / 6, rectOffsetY * 7, 'Time:')
+      .text(sceneWidth / 6, rectOffsetY * 8, 'Time:')
       .setOrigin(0.5)
       .setStyle(paragraphStyle)
       .setInteractive();
 
-    this.prevConfig.timeCountList?.forEach((numb, index) => {
+    this.additionalParams.timeCountList.forEach((numb, index) => {
+      const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
+      const startPosition = timeCountText.x + timeCountText.width - 20;
+      const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
+      const isActive = numb === this.prevConfig.gameTime;
+      const style = isActive ? activeStyle : commonStyle;
       const text = this.add
-        .text(sceneWidth / this.prevConfig.timeCountList!.length + timeCountText.width, rectOffsetY * 7, numb.toString())
+        .text(positionX, rectOffsetY * 8, numb.toString())
         .setOrigin(0.5)
-        .setStyle(commonStyle)
-        .setInteractive({ useHandCursor: true });
+        .setStyle(style)
+        .setInteractive({ useHandCursor: true })
+        .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+          this.changeGameTime(text.text);
+        });
+      this.gameTimeGroup?.add(text);
     });
   }
 
-  changeDifficulty(diff: IDifficulty) {
-    // this.newConfig?.currentDifficulty = ;
-    // this.prevConfig?.difficulties.filter((element) => {
-    //   element.name ===
-    // });
+  getDifficulty(diff: number) {
+    const [difficulty] = this.additionalParams.difficulties.slice(diff);
+    return difficulty;
+  }
+
+  changeDifficulty(index: number) {
     this.difficultiesGroup?.children.getArray().forEach((text) => {
-      const isActive = (text as Phaser.GameObjects.Text).text === diff.name;
+      const isActive = (text as Phaser.GameObjects.Text).text === this.getDifficulty(index).name;
       const style = isActive ? activeStyle : commonStyle;
       (text as Phaser.GameObjects.Text).setStyle(style);
     });
-    this.newConfig.currentDifficulty = diff;
+    this.newConfig.currentDifficulty = index;
+    console.log(this.newConfig);
+  }
+
+  changeGameTime(sec: number | string) {
+    this.gameTimeGroup?.children.getArray().forEach((time) => {
+      const isActive = (time as Phaser.GameObjects.Text).text === sec;
+      const style = isActive ? activeStyle : commonStyle;
+      (time as Phaser.GameObjects.Text).setStyle(style);
+    });
+    this.newConfig.gameTime = Number(sec);
     console.log(this.newConfig);
   }
 }

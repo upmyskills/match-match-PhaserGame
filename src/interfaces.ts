@@ -40,3 +40,17 @@ export interface ICardChangePosition {
   posX?: number;
   posY?: number;
 }
+
+export interface IGameConfig {
+  background: string;
+  currentDifficulty: number;
+  cardBack: string;
+  gameTime: number;
+  timeCountList?: Array<number>;
+  variants: Array<string>;
+}
+
+export interface IAdditionalParams {
+  difficulties: Array<IDifficulty>;
+  timeCountList: Array<number>;
+}

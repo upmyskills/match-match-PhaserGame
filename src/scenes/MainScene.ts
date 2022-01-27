@@ -1,39 +1,18 @@
 import { Card } from '../sprites/Card';
-import bgImage from '../assets/sprites/backgrounds/background.png';
-import cardbackImage from '../assets/sprites/cardback/back1.png';
-import cardTapSound from '../assets/sounds/card.mp3';
-import themeSound from '../assets/sounds/theme.mp3';
-import successSound from '../assets/sounds/success.mp3';
-import completeSound from '../assets/sounds/complete.mp3';
-import timeisoverSound from '../assets/sounds/timeout.mp3';
-import { ICardsPositions, IDifficulty, ISounds } from '../interfaces';
+import { IAdditionalParams, ICardsPositions, IDifficulty, IGameConfig, ISounds } from '../interfaces';
 import { commonStyle } from '../utils/fontStyles';
 
 class MainScene extends Phaser.Scene {
-  cardsPositions: Array<ICardsPositions>;
-  cardScale: number;
-  difficulties: Array<IDifficulty>;
-  currentDifficulty: IDifficulty;
-  cardBack = 'cardbackImage';
-  cardsList: Array<Card> = [];
-  activeCards: Array<Card> = [];
-  canvasCenterPoint = { x: 0, y: 0 };
-  blocked = false;
-  wrongAttempts = 0;
-  incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
-  variants = ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'];
-  timeCountList = [3, 10, 15, 30, 45, 60];
-  gameTime = 10;
-  elapsedTime = 1;
-  elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
-  sounds: ISounds | undefined;
+  private gameConfig: IGameConfig = {
+    background: 'string',
+    currentDifficulty: 0,
+    cardBack: 'cardbackImage',
+    gameTime: 10,
+    variants: ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'],
+  };
 
-  constructor() {
-    super({ key: 'MainScene' });
-
-    this.cardsPositions = [];
-    this.cardScale = 0.6;
-    this.difficulties = [
+  private additionInfo: IAdditionalParams = {
+    difficulties: [
       {
         name: 'easy',
         rows: 2,
@@ -49,36 +28,46 @@ class MainScene extends Phaser.Scene {
         rows: 3,
         colls: 6,
       },
-    ];
+    ],
+    timeCountList: [3, 10, 20, 30, 50, 60],
+  };
 
-    // eslint-disable-next-line prefer-destructuring
-    this.currentDifficulty = this.difficulties[2];
+  cardsPositions: Array<ICardsPositions>;
+  cardScale: number;
+  cardsList: Array<Card> = [];
+  activeCards: Array<Card> = [];
+  canvasCenterPoint = { x: 0, y: 0 };
+  blocked = false;
+  wrongAttempts = 0;
+  incorrectAttemptsMessage: Phaser.GameObjects.Text | undefined;
+  elapsedTime = 1;
+  elapsedTimeMessage: Phaser.GameObjects.Text | undefined;
+  sounds: ISounds | undefined;
+
+  constructor() {
+    super({ key: 'MainScene' });
+
+    this.cardsPositions = [];
+    this.cardScale = 0.6;
   }
 
   preload() {
-    this.load.image('bgImage', bgImage);
-    this.load.image(this.cardBack, cardbackImage);
     this.preloadCardVariants();
+  }
 
-    this.load.audio('cardTapSound', cardTapSound);
-    this.load.audio('themeSound', themeSound);
-    this.load.audio('timeisoverSound', timeisoverSound);
-    this.load.audio('successSound', successSound);
-    this.load.audio('completeSound', completeSound);
-
+  create(data: { gameConfig: IGameConfig; sounds: ISounds }) {
+    if (data.sounds) this.sounds = data.sounds;
+    // if (data.gameConfig) this.cardsList = [];
     this.canvasCenterPoint = {
       x: Number(this.sys.game.config.width) / 2,
       y: Number(this.sys.game.config.height) / 2,
     };
-  }
 
-  create(config: any) {
-    console.log('We get', config);
-    if (config.difficulty) {
-      this.currentDifficulty = config.difficulty;
+    console.log('Sounds: ', this.sounds);
+    console.log('MainScene: ', data);
+    if (data.gameConfig) {
+      this.gameConfig.currentDifficulty = data.gameConfig.currentDifficulty;
     }
-    this.initSounds();
-    const bg = this.add.sprite(this.canvasCenterPoint.x, this.canvasCenterPoint.y, 'bgImage');
 
     this.input.on('gameobjectdown', this.flip, this);
 
@@ -90,13 +79,11 @@ class MainScene extends Phaser.Scene {
     });
 
     this.initGame();
-    // this.scene.launch('ConfigScene');
 
     this.elapsedTimeMessage = this.add.text(540, 0, ` `, {
       color: '#000',
       fontFamily: 'CevicheOne-Regular',
       fontSize: '42px',
-      // fontStyle: 'bold',
     });
 
     const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!');
@@ -105,12 +92,7 @@ class MainScene extends Phaser.Scene {
       console.log('Click to change scene!');
       this.scene.pause();
       this.clearGame();
-      this.scene.run('ConfigScene', {
-        difficulties: this.difficulties,
-        currentDifficulty: this.currentDifficulty,
-        gameTime: this.gameTime,
-        timeCountList: this.timeCountList,
-      });
+      this.scene.run('ConfigScene', { gameConfig: this.gameConfig, additionalParams: this.additionInfo });
     });
     // this.switchToConfig();
   }
@@ -134,21 +116,14 @@ class MainScene extends Phaser.Scene {
     });
   }
 
-  private initSounds() {
-    this.sounds = {
-      cardTap: this.sound.add('cardTapSound', { volume: 0.05 }),
-      themeSound: this.sound.add('themeSound', { volume: 0.05 }),
-      complete: this.sound.add('completeSound'),
-      timeisover: this.sound.add('timeisoverSound'),
-      success: this.sound.add('successSound'),
-    };
-
-    this.sounds?.themeSound.play({ loop: true });
+  private getDifficulties() {
+    return this.additionInfo.difficulties;
   }
 
   private initGame() {
-    this.setCardPositions(this.currentDifficulty);
-    this.createCards(this.variants);
+    const [difficulty] = this.getDifficulties().slice(this.gameConfig.currentDifficulty);
+    this.setCardPositions(difficulty);
+    this.createCards(this.gameConfig.variants);
     this.layoutCards();
   }
 
@@ -198,7 +173,7 @@ class MainScene extends Phaser.Scene {
   }
 
   private createTimer() {
-    this.elapsedTimeMessage?.setText(`Time: ${this.gameTime}`);
+    this.elapsedTimeMessage?.setText(`Time: ${this.gameConfig.gameTime}`);
     this.time.addEvent({
       delay: 1000,
       callback: this.onTick,
@@ -209,9 +184,9 @@ class MainScene extends Phaser.Scene {
   }
 
   private onTick() {
-    this.elapsedTimeMessage?.setText(`Time: ${this.gameTime - this.elapsedTime}`);
+    this.elapsedTimeMessage?.setText(`Time: ${this.gameConfig.gameTime - this.elapsedTime}`);
 
-    if (this.elapsedTime >= this.gameTime) {
+    if (this.elapsedTime >= this.gameConfig.gameTime) {
       this.stopGame();
       return;
     }
@@ -284,8 +259,9 @@ class MainScene extends Phaser.Scene {
   }
 
   private createCards(variants: Array<string>) {
-    const totalCard = this.currentDifficulty.rows * this.currentDifficulty.colls;
-    const cardInst = { scene: this, x: 0, y: 0, texture: this.cardBack, scale: this.cardScale, secret: '' };
+    const [difficulty] = this.getDifficulties().slice(this.gameConfig.currentDifficulty);
+    const totalCard = difficulty.rows * difficulty.colls;
+    const cardInst = { scene: this, x: 0, y: 0, texture: this.gameConfig.cardBack, scale: this.cardScale, secret: '' };
     for (let i = 0; i < totalCard / 2; i += 1) {
       for (let j = 0; j < 2; j += 1) {
         cardInst.secret = variants[i];
@@ -303,7 +279,7 @@ class MainScene extends Phaser.Scene {
     for (let col = 0; col < difficulty.colls; col += 1) {
       for (let row = 0; row < difficulty.rows; row += 1) {
         const cardSpacing = 20;
-        const cardTexture = this.textures.get(this.cardBack);
+        const cardTexture = this.textures.get(this.gameConfig.cardBack);
         const textureWidth = cardTexture.getSourceImage().width;
         const textureHeight = cardTexture.getSourceImage().height;
         // const card = new Card({ scene: this, x: 0, y: 0, texture: cardTexture, scale: this.cardScale, secret: '' });
@@ -356,7 +332,7 @@ class MainScene extends Phaser.Scene {
   }
 
   private preloadCardVariants() {
-    this.variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
+    this.gameConfig.variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
   }
 }
 
