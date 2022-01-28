@@ -7,10 +7,12 @@ import themeSound from '../assets/sounds/theme.mp3';
 import successSound from '../assets/sounds/success.mp3';
 import completeSound from '../assets/sounds/complete.mp3';
 import timeisoverSound from '../assets/sounds/timeout.mp3';
-import { ISounds } from '../interfaces';
+import { ICategories, ISounds } from '../interfaces';
 
 class PreloadScene extends Phaser.Scene {
   sounds!: ISounds;
+  variants: ICategories = { ocean: [], airplanes: [], radioppl: [] };
+
   constructor() {
     super('PreloadScene');
   }
@@ -26,12 +28,18 @@ class PreloadScene extends Phaser.Scene {
     this.load.audio('timeisoverSound', timeisoverSound);
     this.load.audio('successSound', successSound);
     this.load.audio('completeSound', completeSound);
+
+    this.initPictures();
   }
 
   create() {
     this.initSounds();
     const cardBackVariants = ['cardbackImage', 'cardback_v2', 'cardback_v3', 'cardback_v4'];
-    this.scene.launch('MainScene', { sounds: this.sounds, cardBackVariants });
+    this.scene.launch('MainScene', {
+      sounds: this.sounds,
+      cardBackVariants,
+      categories: this.variants,
+    });
   }
 
   private initSounds() {
@@ -44,6 +52,25 @@ class PreloadScene extends Phaser.Scene {
     };
 
     this.sounds.themeSound.play({ loop: true });
+  }
+
+  private initPictures() {
+    const pathToImages = '../media/cards';
+    const oceanimages = 16;
+    const airplanesimages = 15;
+
+    this.loadCategory('ocean', oceanimages, pathToImages);
+    this.loadCategory('airplanes', airplanesimages, pathToImages);
+  }
+
+  private loadCategory(categoryName: string, filesCount: number, pathToDir: string) {
+    for (let i = 0; i < filesCount; i += 1) {
+      const category = categoryName;
+      const number = i + 1 < 10 ? `0${i + 1}` : i + 1;
+      const fileName = `${category}_${number}`;
+      this.load.image(fileName, `${pathToDir}/${categoryName}/${fileName}.png`);
+      this.variants[categoryName].push(fileName);
+    }
   }
 }
 

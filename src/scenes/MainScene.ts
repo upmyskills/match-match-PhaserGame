@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 import { Card } from '../sprites/Card';
-import { IAdditionalParams, ICardsPositions, IDifficulty, IGameConfig, ISounds } from '../interfaces';
+import { IAdditionalParams, ICardsPositions, ICategories, IDifficulty, IGameConfig, ISounds } from '../interfaces';
 import { commonStyle } from '../utils/fontStyles';
 
 class MainScene extends Phaser.Scene {
@@ -9,7 +9,7 @@ class MainScene extends Phaser.Scene {
     currentDifficulty: 0,
     cardBack: 'cardbackImage',
     gameTime: 10,
-    variants: ['ocean_01', 'ocean_02', 'ocean_03', 'ocean_04', 'ocean_05'],
+    category: 'ocean',
   };
 
   private additionInfo: IAdditionalParams = {
@@ -33,6 +33,7 @@ class MainScene extends Phaser.Scene {
     timeCountList: [3, 10, 20, 30, 50, 60],
     scene: this,
     cardBackVariants: [],
+    categories: { ocean: [], airplanes: [], radioppl: [] },
   };
 
   cardsPositions: Array<ICardsPositions>;
@@ -55,24 +56,19 @@ class MainScene extends Phaser.Scene {
     this.cardScale = 0.6;
   }
 
-  init(data: any) {
-    console.log('In init method:', data);
-  }
-
   preload() {
-    this.preloadCardVariants();
+    // this.preloadCardVariants();
   }
 
-  async create(data: { gameConfig: IGameConfig; sounds: ISounds; cardBackVariants: Array<string> }) {
+  async create(data: { gameConfig: IGameConfig; sounds: ISounds; cardBackVariants: Array<string>; categories: ICategories }) {
     if (data.sounds) this.sounds = data.sounds;
     if (data.cardBackVariants) this.additionInfo.cardBackVariants = data.cardBackVariants;
+    if (data.cardBackVariants) this.additionInfo.categories = data.categories;
     // if (data.gameConfig) this.cardsList = [];
     this.canvasCenterPoint = {
       x: Number(this.sys.game.config.width) / 2,
       y: Number(this.sys.game.config.height) / 2,
     };
-
-    console.log('MainScene: ', data);
 
     this.input.on('gameobjectdown', this.flip, this);
 
@@ -91,7 +87,6 @@ class MainScene extends Phaser.Scene {
 
     if (data.gameConfig) {
       console.log('Set config!');
-      console.log('In create cards: ', this.cardsList);
       // await this.dropDownCards();
       // this.clearGame();
       // this.initGame();
@@ -140,15 +135,15 @@ class MainScene extends Phaser.Scene {
   }
 
   private initGame() {
-    console.log('INIT GAME!');
     const [difficulty] = this.getDifficulties().slice(this.gameConfig.currentDifficulty);
+    const categoryVariants = this.additionInfo.categories[this.gameConfig.category];
     this.setCardPositions(difficulty);
-    this.createCards(this.gameConfig.variants);
+    const shuffledVariants = Phaser.Utils.Array.Shuffle(categoryVariants);
+    this.createCards(shuffledVariants);
     this.layoutCards();
   }
 
   private endGame() {
-    console.log('END GAME RUNNED!');
     const guessedCardsCount = this.cardsList.filter((card) => card.getGuessStatus()).length;
     const isComplete = this.cardsList.length === guessedCardsCount;
     // this.sounds?.themeSound.stop();
@@ -333,7 +328,6 @@ class MainScene extends Phaser.Scene {
   private async dropDownCards() {
     this.blocked = true;
     const promiseList = this.cardsList.map((card, index) => {
-      console.log(card);
       const confMove = {
         index,
         posX: Number(this.sys.game.config.width) + card.width,
@@ -356,10 +350,9 @@ class MainScene extends Phaser.Scene {
     this.elapsedTimeMessage?.setText('');
     this.elapsedTime = 1;
   }
-
-  private preloadCardVariants() {
-    this.gameConfig.variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
-  }
+  // private preloadCardVariants() {
+  //   this.gameConfig.variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
+  // }
 }
 
 export { MainScene };

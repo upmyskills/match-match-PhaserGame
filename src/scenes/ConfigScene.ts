@@ -10,6 +10,7 @@ class ConfigScene extends Phaser.Scene {
   difficultiesGroup: Phaser.GameObjects.Group | undefined;
   gameTimeGroup: Phaser.GameObjects.Group | undefined;
   cardBackGroup!: Phaser.GameObjects.Group;
+  categoriesGroup!: Phaser.GameObjects.Group;
   prevConfig!: IGameConfig;
   newConfig!: IGameConfig;
   additionalParams!: IAdditionalParams;
@@ -28,6 +29,7 @@ class ConfigScene extends Phaser.Scene {
     this.difficultiesGroup = this.add.group();
     this.gameTimeGroup = this.add.group();
     this.cardBackGroup = this.add.group();
+    this.categoriesGroup = this.add.group();
     this.additionalParams = additionalParams;
 
     this.drawArea();
@@ -66,11 +68,15 @@ class ConfigScene extends Phaser.Scene {
       .setInteractive();
 
     this.additionalParams.difficulties.forEach((diff, index) => {
+      const startPosition = difficultyText.x + difficultyText.width + 70;
+      const space = (sceneWidth - startPosition) / this.additionalParams.difficulties.length;
+      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
+
       const currentDiff = this.getDifficulty(this.prevConfig.currentDifficulty);
       const isActive = diff.name === currentDiff.name;
       const styles = isActive ? activeStyle : commonStyle;
       const text = this.add
-        .text((sceneWidth / 5) * (index + 1) + difficultyText.width, rectOffsetY * 5, diff.name)
+        .text(positionX, rectOffsetY * 5, diff.name)
         .setOrigin(0.5)
         .setStyle(styles)
         .setInteractive({ useHandCursor: true });
@@ -90,9 +96,12 @@ class ConfigScene extends Phaser.Scene {
       .setInteractive();
 
     this.additionalParams.timeCountList.forEach((numb, index) => {
-      const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
-      const startPosition = timeCountText.x + timeCountText.width - 20;
-      const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
+      const startPosition = timeCountText.x + timeCountText.width + 70;
+      const space = (sceneWidth - startPosition) / this.additionalParams.timeCountList.length;
+      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
+      // const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
+      // const startPosition = timeCountText.x + timeCountText.width - 20;
+      // const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
       const isActive = numb === this.prevConfig.gameTime;
       const style = isActive ? activeStyle : commonStyle;
       const text = this.add
@@ -106,18 +115,21 @@ class ConfigScene extends Phaser.Scene {
       this.gameTimeGroup?.add(text);
     });
 
-    const cardVariantText = this.add
-      .text(sceneWidth / 6, rectOffsetY * 12, 'Cardback:')
+    const cardBackVariantText = this.add
+      .text(sceneWidth / 6, rectOffsetY * 13, 'Cardback:')
       .setOrigin(0.5)
       .setStyle(paragraphStyle)
       .setInteractive();
 
     this.additionalParams.cardBackVariants.forEach((cardBack, index) => {
-      const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
-      const startPosition = timeCountText.x + timeCountText.width - 20;
-      const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
+      const startPosition = cardBackVariantText.x + cardBackVariantText.width + 70;
+      const space = (sceneWidth - startPosition) / this.additionalParams.cardBackVariants.length;
+      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
+      // const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
+      // const startPosition = timeCountText.x + timeCountText.width - 20;
+      // const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
       const cardImg = this.add
-        .image(positionX, rectOffsetY * 12, cardBack)
+        .image(positionX, rectOffsetY * 13, cardBack)
         .setOrigin(0.5)
         .setScale(0.4)
         .setInteractive({ useHandCursor: true })
@@ -127,6 +139,34 @@ class ConfigScene extends Phaser.Scene {
         });
       if (cardBack === this.prevConfig.cardBack) cardImg.setTint(0x00ff00);
       this.cardBackGroup.add(cardImg);
+    });
+
+    const cardCategoriesText = this.add
+      .text(sceneWidth / 6, rectOffsetY * 18, 'Category:')
+      .setOrigin(0.5)
+      .setStyle(paragraphStyle)
+      .setInteractive();
+
+    Object.keys(this.additionalParams.categories).forEach((key, index) => {
+      const startPosition = cardCategoriesText.x + cardCategoriesText.width + 70;
+      const space = (sceneWidth - startPosition) / Object.keys(this.additionalParams.categories).length;
+      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
+      // const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
+      // const startPosition = timeCountText.x + timeCountText.width - 20;
+      // const positionX = startPosition + space + (index > 0 ? space * (index * 1) : 0);
+      const isActive = key === this.prevConfig.category;
+      const style = isActive ? activeStyle : commonStyle;
+
+      const categoryText = this.add
+        .text(positionX, rectOffsetY * 18, key.toString())
+        .setOrigin(0.5)
+        .setStyle(style)
+        .setInteractive({ useHandCursor: true })
+        .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+          this.changeCategory(key);
+        });
+
+      this.categoriesGroup.add(categoryText);
     });
   }
 
@@ -165,6 +205,16 @@ class ConfigScene extends Phaser.Scene {
       }
 
       this.newConfig.cardBack = cardback;
+      console.log(this.newConfig);
+    });
+  }
+
+  changeCategory(categoryName: string) {
+    this.categoriesGroup.children.getArray().forEach((category) => {
+      const isActive = (category as Phaser.GameObjects.Text).text === categoryName;
+      const style = isActive ? activeStyle : commonStyle;
+      (category as Phaser.GameObjects.Text).setStyle(style);
+      this.newConfig.category = categoryName;
       console.log(this.newConfig);
     });
   }

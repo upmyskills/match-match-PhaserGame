@@ -47,7 +47,14 @@ export interface IGameConfig {
   cardBack: string;
   gameTime: number;
   timeCountList?: Array<number>;
-  variants: Array<string>;
+  category: string;
+}
+
+export interface ICategories {
+  [index: string]: Array<string>;
+  ocean: Array<string>;
+  airplanes: Array<string>;
+  radioppl: Array<string>;
 }
 
 export interface IAdditionalParams {
@@ -55,4 +62,5 @@ export interface IAdditionalParams {
   timeCountList: Array<number>;
   scene: Phaser.Scene;
   cardBackVariants: Array<string>;
+  categories: ICategories;
 }
