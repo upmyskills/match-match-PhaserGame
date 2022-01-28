@@ -105,7 +105,7 @@ class MainScene extends Phaser.Scene {
       console.log('Click to change scene!');
       this.scene.pause();
       // this.clearGame();
-      this.scene.launch('ConfigScene', { gameConfig: this.gameConfig, additionalParams: this.additionInfo });
+      this.scene.launch('ConfigScene', { gameConfig: this.gameConfig, additionalParams: this.additionInfo, sounds: this.sounds });
       // if (!this.blocked) this.stopGame();
     });
     // this.switchToConfig();
@@ -137,8 +137,8 @@ class MainScene extends Phaser.Scene {
   private initGame() {
     const [difficulty] = this.getDifficulties().slice(this.gameConfig.currentDifficulty);
     const categoryVariants = this.additionInfo.categories[this.gameConfig.category];
-    this.setCardPositions(difficulty);
     const shuffledVariants = Phaser.Utils.Array.Shuffle(categoryVariants);
+    this.setCardPositions(difficulty);
     this.createCards(shuffledVariants);
     this.layoutCards();
   }
@@ -151,7 +151,7 @@ class MainScene extends Phaser.Scene {
     const tmpl = `
       My war is over!!!\n
       Wrong attempts: ${this.wrongAttempts}!\n
-      Cards guessed: ${guessedCardsCount}!\n
+      Cards guessed: ${guessedCardsCount / 2}!\n
       Elapsed time: ${this.elapsedTime}!\n\n
       ${isComplete ? '! Congratulation !' : '!!! GAME OVER !!!'}\n
     `;

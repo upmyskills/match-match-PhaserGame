@@ -1,9 +1,10 @@
-import { IAdditionalParams, IGameConfig } from '../interfaces';
-import { activeStyle, commonStyle, headerStyle, paragraphStyle } from '../utils/fontStyles';
+import { IAdditionalParams, IGameConfig, ISounds } from '../interfaces';
+import { activeStyle, commonStyle, cursorMoveStyle, headerStyle, paragraphStyle } from '../utils/fontStyles';
 
 interface IData {
   gameConfig: IGameConfig;
   additionalParams: IAdditionalParams;
+  sounds: ISounds;
 }
 
 class ConfigScene extends Phaser.Scene {
@@ -14,13 +15,15 @@ class ConfigScene extends Phaser.Scene {
   prevConfig!: IGameConfig;
   newConfig!: IGameConfig;
   additionalParams!: IAdditionalParams;
+  sounds!: ISounds;
+  success!: Phaser.GameObjects.Image;
 
   constructor() {
     super({ key: 'ConfigScene', visible: false });
   }
 
   create(data: IData) {
-    const { gameConfig, additionalParams } = data;
+    const { gameConfig, additionalParams, sounds } = data;
 
     console.log('ConfigScene get: ', data);
 
@@ -31,19 +34,28 @@ class ConfigScene extends Phaser.Scene {
     this.cardBackGroup = this.add.group();
     this.categoriesGroup = this.add.group();
     this.additionalParams = additionalParams;
+    this.sounds = sounds;
+    this.success = this.add.image(0, 0, 'successIcon').setVisible(false).setDepth(1);
 
     this.drawArea();
     this.setApplyButton();
   }
 
   setApplyButton() {
-    const apply = this.add.text(450, 500, 'Apply', commonStyle).setInteractive();
+    const apply = this.add.text(450, 650, 'New game', commonStyle).setInteractive({ useHandCursor: true });
     apply.setOrigin(0.5);
-    apply.on('pointerdown', () => {
-      this.scene.setVisible(false);
-      this.scene.setActive(false);
-      this.scene.launch('MainScene', { gameConfig: this.newConfig });
-    });
+    apply
+      .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+        this.scene.setVisible(false);
+        this.scene.setActive(false);
+        this.scene.launch('MainScene', { gameConfig: this.newConfig });
+      })
+      .on(Phaser.Input.Events.GAMEOBJECT_POINTER_MOVE, () => {
+        apply.setStyle(cursorMoveStyle);
+      })
+      .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OUT, () => {
+        apply.setStyle(commonStyle);
+      });
   }
 
   drawArea() {
@@ -137,7 +149,9 @@ class ConfigScene extends Phaser.Scene {
           // this.newConfig.cardBack = cardBack;
           this.changeCardBackBariant(cardBack);
         });
-      if (cardBack === this.prevConfig.cardBack) cardImg.setTint(0x00ff00);
+      if (cardBack === this.prevConfig.cardBack) {
+        this.setAsSelect(cardImg, false);
+      }
       this.cardBackGroup.add(cardImg);
     });
 
@@ -170,6 +184,20 @@ class ConfigScene extends Phaser.Scene {
     });
   }
 
+  setAsSelect(obj: Phaser.GameObjects.Image, withTween = true) {
+    const posX = obj.x + obj.displayWidth / 4;
+    const posY = obj.y + obj.displayHeight / 4;
+    this.success.setPosition(posX, posY).setVisible(true);
+    if (withTween) {
+      this.success.setAlpha(0);
+    }
+    this.tweens.add({
+      targets: this.success,
+      duration: 200,
+      alpha: 1,
+    });
+  }
+
   getDifficulty(diff: number) {
     const [difficulty] = this.additionalParams.difficulties.slice(diff);
     return difficulty;
@@ -199,9 +227,7 @@ class ConfigScene extends Phaser.Scene {
     this.cardBackGroup.children.getArray().forEach((item) => {
       const isActive = (item as Phaser.GameObjects.Image).texture.key === cardback;
       if (isActive) {
-        (item as Phaser.GameObjects.Image).setTint(0x00ff00);
-      } else {
-        (item as Phaser.GameObjects.Image).setTint();
+        this.setAsSelect(item as Phaser.GameObjects.Image);
       }
 
       this.newConfig.cardBack = cardback;

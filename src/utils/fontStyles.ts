@@ -20,11 +20,21 @@ export const commonStyle: Phaser.Types.GameObjects.Text.TextStyle = {
 
 export const paragraphStyle: Phaser.Types.GameObjects.Text.TextStyle = {
   align: 'center',
-  color: '#000',
+  color: '#fff',
   fontFamily: 'CevicheOne-Regular',
-  fontSize: '36px',
+  fontSize: '38px',
   fontStyle: 'bold',
-  shadow: { offsetX: 0, offsetY: 0, color: '#0f0', blur: 3, fill: true, stroke: true },
+  shadow: { offsetX: 0, offsetY: 0, color: '#000', blur: 2, fill: true, stroke: true },
+  padding: { x: 5, y: 5 },
+};
+
+export const cursorMoveStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+  align: 'center',
+  color: '#11eeff',
+  fontFamily: 'Monchiy PoP One',
+  // fontSize: '38px',
+  // fontStyle: 'bold',
+  shadow: { offsetX: 0, offsetY: 0, color: '#000', blur: 2, fill: true, stroke: true },
   padding: { x: 5, y: 5 },
 };
 

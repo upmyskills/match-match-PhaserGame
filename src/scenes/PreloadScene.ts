@@ -7,7 +7,9 @@ import themeSound from '../assets/sounds/theme.mp3';
 import successSound from '../assets/sounds/success.mp3';
 import completeSound from '../assets/sounds/complete.mp3';
 import timeisoverSound from '../assets/sounds/timeout.mp3';
+import successIcon from '../assets/sprites/utils/success.png';
 import { ICategories, ISounds } from '../interfaces';
+import { commonStyle, headerStyle } from '../utils/fontStyles';
 
 class PreloadScene extends Phaser.Scene {
   sounds!: ISounds;
@@ -29,7 +31,10 @@ class PreloadScene extends Phaser.Scene {
     this.load.audio('successSound', successSound);
     this.load.audio('completeSound', completeSound);
 
+    this.load.image('successIcon', successIcon);
+
     this.initPictures();
+    this.initFonts();
   }
 
   create() {
@@ -71,6 +76,11 @@ class PreloadScene extends Phaser.Scene {
       this.load.image(fileName, `${pathToDir}/${categoryName}/${fileName}.png`);
       this.variants[categoryName].push(fileName);
     }
+  }
+
+  private initFonts() {
+    this.add.text(0, 0, '', commonStyle);
+    this.add.text(0, 0, '', headerStyle);
   }
 }
 
