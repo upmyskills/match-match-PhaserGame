@@ -8,10 +8,10 @@ interface IData {
 }
 
 class ConfigScene extends Phaser.Scene {
-  difficultiesGroup: Phaser.GameObjects.Group | undefined;
-  gameTimeGroup: Phaser.GameObjects.Group | undefined;
-  cardBackGroup!: Phaser.GameObjects.Group;
-  categoriesGroup!: Phaser.GameObjects.Group;
+  difficultiesList!: Array<Phaser.GameObjects.Text>;
+  gameTimeList!: Array<Phaser.GameObjects.Text>;
+  cardBackList!: Array<Phaser.GameObjects.Image>;
+  categoriesList!: Array<Phaser.GameObjects.Text>;
   prevConfig!: IGameConfig;
   newConfig!: IGameConfig;
   additionalParams!: IAdditionalParams;
@@ -25,14 +25,12 @@ class ConfigScene extends Phaser.Scene {
   create(data: IData) {
     const { gameConfig, additionalParams, sounds } = data;
 
-    console.log('ConfigScene get: ', data);
-
     this.prevConfig = gameConfig;
     this.newConfig = { ...gameConfig };
-    this.difficultiesGroup = this.add.group();
-    this.gameTimeGroup = this.add.group();
-    this.cardBackGroup = this.add.group();
-    this.categoriesGroup = this.add.group();
+    this.difficultiesList = [];
+    this.gameTimeList = [];
+    this.cardBackList = [];
+    this.categoriesList = [];
     this.additionalParams = additionalParams;
     this.sounds = sounds;
     this.success = this.add.image(0, 0, 'successIcon').setVisible(false).setDepth(1);
@@ -68,7 +66,7 @@ class ConfigScene extends Phaser.Scene {
     graph.fillStyle(0xeeeeee, 0.8);
     graph.fillRoundedRect(rectOffsetX, rectOffsetY, sceneWidth - rectOffsetX * 2, sceneHeight - rectOffsetY * 2, 12);
 
-    const headerText = this.add
+    this.add
       .text(sceneWidth / 2, rectOffsetY, 'Game settings:')
       .setOrigin(0.5)
       .setStyle(headerStyle);
@@ -80,15 +78,13 @@ class ConfigScene extends Phaser.Scene {
       .setInteractive();
 
     this.additionalParams.difficulties.forEach((diff, index) => {
-      const startPosition = difficultyText.x + difficultyText.width + 70;
-      const space = (sceneWidth - startPosition) / this.additionalParams.difficulties.length;
-      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
+      const coord = this.getItemPositions(difficultyText, this.additionalParams.difficulties, rectOffsetY, 5, index);
 
       const currentDiff = this.getDifficulty(this.prevConfig.currentDifficulty);
       const isActive = diff.name === currentDiff.name;
       const styles = isActive ? activeStyle : commonStyle;
       const text = this.add
-        .text(positionX, rectOffsetY * 5, diff.name)
+        .text(coord.positionX, coord.positionY, diff.name)
         .setOrigin(0.5)
         .setStyle(styles)
         .setInteractive({ useHandCursor: true });
@@ -98,7 +94,7 @@ class ConfigScene extends Phaser.Scene {
         this.changeDifficulty(curr.indexOf(true));
       });
 
-      this.difficultiesGroup?.add(text);
+      this.difficultiesList = [...this.difficultiesList, text];
     });
 
     const timeCountText = this.add
@@ -108,23 +104,20 @@ class ConfigScene extends Phaser.Scene {
       .setInteractive();
 
     this.additionalParams.timeCountList.forEach((numb, index) => {
-      const startPosition = timeCountText.x + timeCountText.width + 70;
-      const space = (sceneWidth - startPosition) / this.additionalParams.timeCountList.length;
-      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
-      // const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
-      // const startPosition = timeCountText.x + timeCountText.width - 20;
-      // const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
+      const coords = this.getItemPositions(timeCountText, this.additionalParams.timeCountList, rectOffsetY, 8, index);
+
       const isActive = numb === this.prevConfig.gameTime;
       const style = isActive ? activeStyle : commonStyle;
       const text = this.add
-        .text(positionX, rectOffsetY * 8, numb.toString())
+        .text(coords.positionX, coords.positionY, numb.toString())
         .setOrigin(0.5)
         .setStyle(style)
         .setInteractive({ useHandCursor: true })
         .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
           this.changeGameTime(text.text);
         });
-      this.gameTimeGroup?.add(text);
+
+      this.gameTimeList = [...this.gameTimeList, text];
     });
 
     const cardBackVariantText = this.add
@@ -134,25 +127,20 @@ class ConfigScene extends Phaser.Scene {
       .setInteractive();
 
     this.additionalParams.cardBackVariants.forEach((cardBack, index) => {
-      const startPosition = cardBackVariantText.x + cardBackVariantText.width + 70;
-      const space = (sceneWidth - startPosition) / this.additionalParams.cardBackVariants.length;
-      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
-      // const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
-      // const startPosition = timeCountText.x + timeCountText.width - 20;
-      // const positionX = startPosition + space + (index > 0 ? space * (index * 0.6) : 0);
+      const coords = this.getItemPositions(cardBackVariantText, this.additionalParams.cardBackVariants, rectOffsetY, 13, index);
+
       const cardImg = this.add
-        .image(positionX, rectOffsetY * 13, cardBack)
+        .image(coords.positionX, coords.positionY, cardBack)
         .setOrigin(0.5)
         .setScale(0.4)
         .setInteractive({ useHandCursor: true })
         .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
-          // this.newConfig.cardBack = cardBack;
-          this.changeCardBackBariant(cardBack);
+          this.changeCardBackVariant(cardBack);
         });
       if (cardBack === this.prevConfig.cardBack) {
         this.setAsSelect(cardImg, false);
       }
-      this.cardBackGroup.add(cardImg);
+      this.cardBackList = [...this.cardBackList, cardImg];
     });
 
     const cardCategoriesText = this.add
@@ -161,18 +149,15 @@ class ConfigScene extends Phaser.Scene {
       .setStyle(paragraphStyle)
       .setInteractive();
 
-    Object.keys(this.additionalParams.categories).forEach((key, index) => {
-      const startPosition = cardCategoriesText.x + cardCategoriesText.width + 70;
-      const space = (sceneWidth - startPosition) / Object.keys(this.additionalParams.categories).length;
-      const positionX = startPosition + (index > 0 ? space * (index * 1) : 0);
-      // const space = (sceneWidth - timeCountText.width) / this.additionalParams.timeCountList.length;
-      // const startPosition = timeCountText.x + timeCountText.width - 20;
-      // const positionX = startPosition + space + (index > 0 ? space * (index * 1) : 0);
+    const categoryKeys = Object.keys(this.additionalParams.categories);
+
+    categoryKeys.forEach((key, index) => {
+      const coords = this.getItemPositions(cardCategoriesText, categoryKeys, rectOffsetY, 18, index);
       const isActive = key === this.prevConfig.category;
       const style = isActive ? activeStyle : commonStyle;
 
       const categoryText = this.add
-        .text(positionX, rectOffsetY * 18, key.toString())
+        .text(coords.positionX, coords.positionY, key.toString())
         .setOrigin(0.5)
         .setStyle(style)
         .setInteractive({ useHandCursor: true })
@@ -180,8 +165,18 @@ class ConfigScene extends Phaser.Scene {
           this.changeCategory(key);
         });
 
-      this.categoriesGroup.add(categoryText);
+      this.categoriesList = [...this.categoriesList, categoryText];
     });
+  }
+
+  getItemPositions(paragraph: Phaser.GameObjects.Text, objList: Array<any>, offsetY: number, row: number, col: number) {
+    const add = 70;
+    const startPosition = paragraph.x + paragraph.width + add;
+    const space = (Number(this.game.config.width) - startPosition) / objList.length;
+    const positionX = startPosition + (col > 0 ? space * (col * 1) : 0);
+    const positionY = offsetY * row;
+
+    return { positionX, positionY };
   }
 
   setAsSelect(obj: Phaser.GameObjects.Image, withTween = true) {
@@ -204,44 +199,40 @@ class ConfigScene extends Phaser.Scene {
   }
 
   changeDifficulty(index: number) {
-    this.difficultiesGroup?.children.getArray().forEach((text) => {
+    this.difficultiesList.forEach((text) => {
       const isActive = (text as Phaser.GameObjects.Text).text === this.getDifficulty(index).name;
       const style = isActive ? activeStyle : commonStyle;
       (text as Phaser.GameObjects.Text).setStyle(style);
     });
     this.newConfig.currentDifficulty = index;
-    console.log(this.newConfig);
   }
 
   changeGameTime(sec: number | string) {
-    this.gameTimeGroup?.children.getArray().forEach((time) => {
+    this.gameTimeList.forEach((time) => {
       const isActive = (time as Phaser.GameObjects.Text).text === sec;
       const style = isActive ? activeStyle : commonStyle;
       (time as Phaser.GameObjects.Text).setStyle(style);
     });
     this.newConfig.gameTime = Number(sec);
-    console.log(this.newConfig);
   }
 
-  changeCardBackBariant(cardback: string) {
-    this.cardBackGroup.children.getArray().forEach((item) => {
+  changeCardBackVariant(cardback: string) {
+    this.cardBackList.forEach((item) => {
       const isActive = (item as Phaser.GameObjects.Image).texture.key === cardback;
       if (isActive) {
         this.setAsSelect(item as Phaser.GameObjects.Image);
       }
 
       this.newConfig.cardBack = cardback;
-      console.log(this.newConfig);
     });
   }
 
   changeCategory(categoryName: string) {
-    this.categoriesGroup.children.getArray().forEach((category) => {
+    this.categoriesList.forEach((category) => {
       const isActive = (category as Phaser.GameObjects.Text).text === categoryName;
       const style = isActive ? activeStyle : commonStyle;
       (category as Phaser.GameObjects.Text).setStyle(style);
       this.newConfig.category = categoryName;
-      console.log(this.newConfig);
     });
   }
 }

@@ -63,9 +63,11 @@ class PreloadScene extends Phaser.Scene {
     const pathToImages = '../media/cards';
     const oceanimages = 16;
     const airplanesimages = 15;
+    const radiopplaimages = 24;
 
     this.loadCategory('ocean', oceanimages, pathToImages);
     this.loadCategory('airplanes', airplanesimages, pathToImages);
+    this.loadCategory('radioppl', radiopplaimages, pathToImages);
   }
 
   private loadCategory(categoryName: string, filesCount: number, pathToDir: string) {

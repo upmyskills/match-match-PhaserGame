@@ -56,15 +56,11 @@ class MainScene extends Phaser.Scene {
     this.cardScale = 0.6;
   }
 
-  preload() {
-    // this.preloadCardVariants();
-  }
-
-  async create(data: { gameConfig: IGameConfig; sounds: ISounds; cardBackVariants: Array<string>; categories: ICategories }) {
+  create(data: { gameConfig: IGameConfig; sounds: ISounds; cardBackVariants: Array<string>; categories: ICategories }) {
     if (data.sounds) this.sounds = data.sounds;
     if (data.cardBackVariants) this.additionInfo.cardBackVariants = data.cardBackVariants;
     if (data.cardBackVariants) this.additionInfo.categories = data.categories;
-    // if (data.gameConfig) this.cardsList = [];
+
     this.canvasCenterPoint = {
       x: Number(this.sys.game.config.width) / 2,
       y: Number(this.sys.game.config.height) / 2,
@@ -76,7 +72,6 @@ class MainScene extends Phaser.Scene {
       color: '#000',
       fontFamily: 'CevicheOne-Regular',
       fontSize: '42px',
-      // fontStyle: 'bold',
     });
 
     this.elapsedTimeMessage = this.add.text(540, 0, ` `, {
@@ -86,40 +81,26 @@ class MainScene extends Phaser.Scene {
     });
 
     if (data.gameConfig) {
-      console.log('Set config!');
-      // await this.dropDownCards();
-      // this.clearGame();
-      // this.initGame();
       this.gameConfig = { ...this.gameConfig, ...data.gameConfig };
-      // this.stopGame(false);
       this.clearGame();
-      // this.initGame();
     }
 
     this.initGame();
-    // await this.dropDownCards();
 
     const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!');
     button.setInteractive();
     button.on('pointerdown', () => {
-      console.log('Click to change scene!');
       this.scene.pause();
-      // this.clearGame();
       this.scene.launch('ConfigScene', { gameConfig: this.gameConfig, additionalParams: this.additionInfo, sounds: this.sounds });
-      // if (!this.blocked) this.stopGame();
     });
-    // this.switchToConfig();
   }
 
   switchToConfig() {
     const button = this.add.text(Number(this.game.config.width) / 10, Number(this.game.config.height) - 20, 'Change!', commonStyle);
     button.setInteractive();
     button.on('pointerdown', () => {
-      console.log('Click to change scene!');
       this.scene.launch('ConfigScene');
     });
-    // this.scene.pause();
-    // this.scene.launch();
   }
 
   update() {
@@ -146,8 +127,6 @@ class MainScene extends Phaser.Scene {
   private endGame() {
     const guessedCardsCount = this.cardsList.filter((card) => card.getGuessStatus()).length;
     const isComplete = this.cardsList.length === guessedCardsCount;
-    // this.sounds?.themeSound.stop();
-    // this.scene.start('ConfigScene', { isComplete, guessedCardsCount: guessedCardsCount / 2 });
     const tmpl = `
       My war is over!!!\n
       Wrong attempts: ${this.wrongAttempts}!\n
@@ -169,9 +148,6 @@ class MainScene extends Phaser.Scene {
       align: 'center',
     };
 
-    // this.sounds?.themeSound.stop();
-    // this.scene.start('ConfigScene');
-
     const tempMessage = this.add.text(this.canvasCenterPoint.x, this.canvasCenterPoint.y, tmpl, textConfig).setOrigin(0.5, 0.5);
     tempMessage.setInteractive();
     tempMessage.on('pointerdown', () => {
@@ -181,7 +157,6 @@ class MainScene extends Phaser.Scene {
   }
 
   public stopGame(custom = true) {
-    console.log('GAME TIMER:', this.gameTimer);
     if (this.gameTimer) {
       this.time.removeEvent(this.gameTimer);
     }
@@ -290,18 +265,15 @@ class MainScene extends Phaser.Scene {
     }
     Phaser.Utils.Array.Shuffle(this.cardsList);
     this.cardsPositions.forEach((position, index) => this.cardsList[index].init(position));
-    // this.cardsList.map((card, index) => card.setPosition(this.cardsPositions[index].posX, this.cardsPositions[index].posY));
   }
 
   private setCardPositions(difficulty: IDifficulty) {
-    // this.clearGame();
     for (let col = 0; col < difficulty.colls; col += 1) {
       for (let row = 0; row < difficulty.rows; row += 1) {
         const cardSpacing = 20;
         const cardTexture = this.textures.get(this.gameConfig.cardBack);
         const textureWidth = cardTexture.getSourceImage().width;
         const textureHeight = cardTexture.getSourceImage().height;
-        // const card = new Card({ scene: this, x: 0, y: 0, texture: cardTexture, scale: this.cardScale, secret: '' });
         const offsetX = (Number(this.sys.game.config.width) - difficulty.colls * ((textureWidth + cardSpacing) * this.cardScale)) / 2;
         const offsetY = (Number(this.sys.game.config.height) - difficulty.rows * ((textureHeight + cardSpacing) * this.cardScale)) / 2;
 
@@ -316,7 +288,6 @@ class MainScene extends Phaser.Scene {
   }
 
   private layoutCards() {
-    console.log('In layout: ', this.cardsList);
     this.blocked = true;
     const promiseList = this.cardsList.reverse().map((card, index) => card.moveToPosition({ index }));
     Promise.all(promiseList).then(() => {
@@ -350,9 +321,6 @@ class MainScene extends Phaser.Scene {
     this.elapsedTimeMessage?.setText('');
     this.elapsedTime = 1;
   }
-  // private preloadCardVariants() {
-  //   this.gameConfig.variants.forEach((img) => this.load.image(`${img}`, `../media/cards/${img}.png`));
-  // }
 }
 
 export { MainScene };
