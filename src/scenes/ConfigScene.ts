@@ -37,22 +37,40 @@ class ConfigScene extends Phaser.Scene {
 
     this.drawArea();
     this.setApplyButton();
+    this.setContinueButton();
   }
 
   setApplyButton() {
-    const apply = this.add.text(450, 650, 'New game', commonStyle).setInteractive({ useHandCursor: true });
+    const apply = this.add.text(600, 650, 'New game', commonStyle).setInteractive({ useHandCursor: true });
     apply.setOrigin(0.5);
     apply
       .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
         this.scene.setVisible(false);
         this.scene.setActive(false);
-        this.scene.launch('MainScene', { gameConfig: this.newConfig });
+        this.scene.start('MainScene', { gameConfig: this.newConfig });
       })
       .on(Phaser.Input.Events.GAMEOBJECT_POINTER_MOVE, () => {
         apply.setStyle(cursorMoveStyle);
       })
       .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OUT, () => {
         apply.setStyle(commonStyle);
+      });
+  }
+
+  setContinueButton() {
+    const continueBtn = this.add.text(300, 650, 'Return', commonStyle).setInteractive({ useHandCursor: true });
+    continueBtn.setOrigin(0.5);
+    continueBtn
+      .on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+        this.scene.setVisible(false);
+        this.scene.setActive(false);
+        this.scene.run('MainScene');
+      })
+      .on(Phaser.Input.Events.GAMEOBJECT_POINTER_MOVE, () => {
+        continueBtn.setStyle(cursorMoveStyle);
+      })
+      .on(Phaser.Input.Events.GAMEOBJECT_POINTER_OUT, () => {
+        continueBtn.setStyle(commonStyle);
       });
   }
 

@@ -40,7 +40,7 @@ class PreloadScene extends Phaser.Scene {
   create() {
     this.initSounds();
     const cardBackVariants = ['cardbackImage', 'cardback_v2', 'cardback_v3', 'cardback_v4'];
-    this.scene.launch('MainScene', {
+    this.scene.start('MainScene', {
       sounds: this.sounds,
       cardBackVariants,
       categories: this.variants,
@@ -49,8 +49,8 @@ class PreloadScene extends Phaser.Scene {
 
   private initSounds() {
     this.sounds = {
-      cardTap: this.sound.add('cardTapSound', { volume: 0.05 }),
-      themeSound: this.sound.add('themeSound', { volume: 0.05 }),
+      cardTap: this.sound.add('cardTapSound', { volume: 0.8 }),
+      themeSound: this.sound.add('themeSound', { volume: 0.5 }),
       complete: this.sound.add('completeSound'),
       timeisover: this.sound.add('timeisoverSound'),
       success: this.sound.add('successSound'),

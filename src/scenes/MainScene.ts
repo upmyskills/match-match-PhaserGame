@@ -30,7 +30,7 @@ class MainScene extends Phaser.Scene {
         colls: 6,
       },
     ],
-    timeCountList: [3, 10, 20, 30, 50, 60],
+    timeCountList: [10, 20, 30, 40, 50, 60],
     scene: this,
     cardBackVariants: [],
     categories: { ocean: [], airplanes: [], radioppl: [] },
@@ -57,6 +57,7 @@ class MainScene extends Phaser.Scene {
   }
 
   create(data: { gameConfig: IGameConfig; sounds: ISounds; cardBackVariants: Array<string>; categories: ICategories }) {
+    console.log('Data:', data);
     if (data.sounds) this.sounds = data.sounds;
     if (data.cardBackVariants) this.additionInfo.cardBackVariants = data.cardBackVariants;
     if (data.cardBackVariants) this.additionInfo.categories = data.categories;
@@ -100,14 +101,6 @@ class MainScene extends Phaser.Scene {
     button.setInteractive();
     button.on('pointerdown', () => {
       this.scene.launch('ConfigScene');
-    });
-  }
-
-  update() {
-    this.cardsList.forEach((card) => {
-      const angle = card.angle + card.getStep();
-      card.setAngle(angle);
-      if (card.angle >= 3 || card.angle <= -3) card.changeDirection();
     });
   }
 
@@ -290,7 +283,7 @@ class MainScene extends Phaser.Scene {
   private layoutCards() {
     this.blocked = true;
     const promiseList = this.cardsList.reverse().map((card, index) => card.moveToPosition({ index }));
-    Promise.all(promiseList).then(() => {
+    Promise.allSettled(promiseList).then(() => {
       this.createTimer();
       this.blocked = false;
     });

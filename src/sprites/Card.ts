@@ -5,7 +5,6 @@ class Card extends Phaser.GameObjects.Sprite {
   private isFlipped = false;
   private cardBack: string;
   private direction: boolean;
-  private step = 0.03;
   private isGuessed = false;
   private baseScale;
   private position: ICardsPositions = { posX: 0, posY: 0 };
@@ -13,6 +12,7 @@ class Card extends Phaser.GameObjects.Sprite {
   constructor(cardObj: ICustomSprite) {
     super(cardObj.scene, cardObj.x, cardObj.y, cardObj.texture);
     cardObj.scene.add.existing(this);
+
     this.setScale(cardObj.scale);
     this.secretValue = cardObj.secret;
 
@@ -22,6 +22,8 @@ class Card extends Phaser.GameObjects.Sprite {
     this.setInteractive();
     this.baseScale = cardObj.scale;
     this.setAlpha(0.9);
+
+    this.cardWaveAnim(cardObj.scene);
   }
 
   public init(positions: ICardsPositions) {
@@ -43,6 +45,22 @@ class Card extends Phaser.GameObjects.Sprite {
     });
 
     return flyCardPromise;
+  }
+
+  private cardWaveAnim(scene: Phaser.Scene) {
+    const tweenConfig = {
+      targets: this,
+      duration: 5000,
+      angle: this.direction ? 3 : -3,
+      repeat: 0,
+      onComplete: () => {
+        this.direction = !this.direction;
+        tweenConfig.angle = this.direction ? 3 : -3;
+        scene.tweens.add(tweenConfig);
+      },
+    };
+
+    scene.tweens.add(tweenConfig);
   }
 
   public flipCardAnim(texture: string) {
@@ -90,16 +108,8 @@ class Card extends Phaser.GameObjects.Sprite {
     return this.direction;
   }
 
-  public getStep() {
-    return this.direction ? this.step : -this.step;
-  }
-
   public changeDirection() {
     this.direction = !this.direction;
-  }
-
-  public setStep(step: number) {
-    this.step = step;
   }
 
   public compareWith(card: Card) {

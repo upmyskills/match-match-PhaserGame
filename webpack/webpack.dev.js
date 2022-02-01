@@ -15,6 +15,6 @@ module.exports = {
     compress: true,
     contentBase: path.resolve(__dirname, './src/public'),
     historyApiFallback: true,
-    // host: '0.0.0.0',
+    // host: '10.2.5.0',
   }
 }
