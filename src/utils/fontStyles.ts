@@ -32,8 +32,6 @@ export const cursorMoveStyle: Phaser.Types.GameObjects.Text.TextStyle = {
   align: 'center',
   color: '#11eeff',
   fontFamily: 'Monchiy PoP One',
-  // fontSize: '38px',
-  // fontStyle: 'bold',
   shadow: { offsetX: 0, offsetY: 0, color: '#000', blur: 2, fill: true, stroke: true },
   padding: { x: 5, y: 5 },
 };

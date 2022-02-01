@@ -64,3 +64,19 @@ export interface IAdditionalParams {
   cardBackVariants: Array<string>;
   categories: ICategories;
 }
+
+export interface IData {
+  gameConfig: IGameConfig;
+  additionalParams: IAdditionalParams;
+  sounds: ISounds;
+}
+
+export interface IEndGameStatus {
+  elapsedTime: number;
+  guessedPairs: number;
+  incorrectAnsw: number;
+  difficulty: string;
+  gameCategory: string;
+  isWin: boolean;
+  config: IData;
+}

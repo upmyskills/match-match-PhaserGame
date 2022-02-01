@@ -1,11 +1,5 @@
-import { IAdditionalParams, IGameConfig, ISounds } from '../interfaces';
+import { IAdditionalParams, IData, IGameConfig, ISounds } from '../interfaces';
 import { activeStyle, commonStyle, cursorMoveStyle, headerStyle, paragraphStyle } from '../utils/fontStyles';
-
-interface IData {
-  gameConfig: IGameConfig;
-  additionalParams: IAdditionalParams;
-  sounds: ISounds;
-}
 
 class ConfigScene extends Phaser.Scene {
   difficultiesList!: Array<Phaser.GameObjects.Text>;

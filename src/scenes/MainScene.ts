@@ -1,6 +1,5 @@
-/* eslint-disable class-methods-use-this */
 import { Card } from '../sprites/Card';
-import { IAdditionalParams, ICardsPositions, ICategories, IDifficulty, IGameConfig, ISounds } from '../interfaces';
+import { IAdditionalParams, ICardsPositions, ICategories, IDifficulty, IEndGameStatus, IGameConfig, ISounds } from '../interfaces';
 import { commonStyle } from '../utils/fontStyles';
 
 class MainScene extends Phaser.Scene {
@@ -117,16 +116,28 @@ class MainScene extends Phaser.Scene {
     this.layoutCards();
   }
 
-  private endGame() {
+  private endGame(isComplete: boolean, guessedCardsCount: number) {
+    const difficultyCaption = this.additionInfo.difficulties[this.gameConfig.currentDifficulty];
+    const endGameStatus: IEndGameStatus = {
+      elapsedTime: this.elapsedTime,
+      guessedPairs: guessedCardsCount / 2,
+      incorrectAnsw: this.wrongAttempts,
+      difficulty: difficultyCaption.name,
+      gameCategory: this.gameConfig.category,
+      isWin: isComplete,
+      config: {
+        gameConfig: this.gameConfig,
+        additionalParams: this.additionInfo,
+        sounds: this.sounds as ISounds,
+      },
+    };
+
+    this.scene.start('EndGameScene', endGameStatus);
+  }
+
+  public stopGame(custom = true) {
     const guessedCardsCount = this.cardsList.filter((card) => card.getGuessStatus()).length;
     const isComplete = this.cardsList.length === guessedCardsCount;
-    const tmpl = `
-      My war is over!!!\n
-      Wrong attempts: ${this.wrongAttempts}!\n
-      Cards guessed: ${guessedCardsCount / 2}!\n
-      Elapsed time: ${this.elapsedTime}!\n\n
-      ${isComplete ? '! Congratulation !' : '!!! GAME OVER !!!'}\n
-    `;
 
     if (isComplete) {
       this.sounds?.complete.play();
@@ -134,27 +145,11 @@ class MainScene extends Phaser.Scene {
       this.sounds?.timeisover.play();
     }
 
-    const textConfig: Phaser.Types.GameObjects.Text.TextStyle = {
-      color: '#000000',
-      fontFamily: 'CevicheOne-Regular',
-      fontSize: '48px',
-      align: 'center',
-    };
-
-    const tempMessage = this.add.text(this.canvasCenterPoint.x, this.canvasCenterPoint.y, tmpl, textConfig).setOrigin(0.5, 0.5);
-    tempMessage.setInteractive();
-    tempMessage.on('pointerdown', () => {
-      tempMessage.destroy();
-      this.initGame();
-    });
-  }
-
-  public stopGame(custom = true) {
     if (this.gameTimer) {
       this.time.removeEvent(this.gameTimer);
     }
     this.dropDownCards().then(() => {
-      if (custom) this.endGame();
+      if (custom) this.endGame(isComplete, guessedCardsCount);
       this.clearGame();
     });
   }
