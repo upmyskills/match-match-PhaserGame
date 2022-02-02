@@ -50,7 +50,7 @@ class PreloadScene extends Phaser.Scene {
   private initSounds() {
     this.sounds = {
       cardTap: this.sound.add('cardTapSound', { volume: 0.8 }),
-      themeSound: this.sound.add('themeSound', { volume: 0.5 }),
+      themeSound: this.sound.add('themeSound', { volume: 0.4 }),
       complete: this.sound.add('completeSound'),
       timeisover: this.sound.add('timeisoverSound'),
       success: this.sound.add('successSound'),
@@ -60,7 +60,7 @@ class PreloadScene extends Phaser.Scene {
   }
 
   private initPictures() {
-    const pathToImages = '../media/cards';
+    const pathToImages = './media/cards';
     const oceanimages = 16;
     const airplanesimages = 15;
     const radiopplaimages = 24;

@@ -6,7 +6,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    main: path.resolve(__dirname, '..', './src/app.ts')
+    main: path.resolve(__dirname, '../src/app.ts')
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js']
@@ -47,16 +47,9 @@ module.exports = {
       }
     ]
   },
-  output: {
-    path: path.resolve(__dirname, '..', './build'),
-    filename: 'bundle-[hash].js',
-    publicPath: '/',
-    assetModuleFilename: 'assets/[hash][ext]',
-    clean: true,
-  },
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, '..', './src/index.html')
+      template: path.resolve(__dirname, '../src/index.html')
     }),
     new MiniCssExtractPlugin({
       filename: '[name].[contenthash].css',
